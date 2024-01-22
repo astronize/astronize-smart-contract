@@ -1,0 +1,9 @@
+artifacts/
+node_modules/
+typechain-types/
+data/*
+cache/solidity-files-cache.json
+scripts/o.sol
+o.sol
+flatten/
+.DS_Store

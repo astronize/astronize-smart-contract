@@ -27,6 +27,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
         uint256 indexed nonce,
         uint256 amount,
         uint256 fee,
+        uint256 toTreasuryAmount,
         uint256 deadline,
         address[] validators
     );
@@ -50,12 +51,19 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
         address[] tokenAddress,
         bool isAllowed
     );
+     event DepositSharePercentageSet(
+        address indexed sender,
+        address indexed tokenAddress,
+        uint256 previousValue,
+        uint256 newValue
+    );
 
     mapping(address => mapping(address => bool)) internal _requests; // mapping user => token => isAllowed
     mapping(uint256 => bool) internal _nonces;
     EnumerableSet.AddressSet internal _validators;
     mapping(address => mapping(uint256 => bool)) internal _nonceValidators;
     address public treasuryAddress;
+    mapping(address => uint256) internal depositSharePercentages;
 
     constructor(
         address _adminProjectRouter,
@@ -138,7 +146,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
     }
 
     /**
-     * @notice set nonce for cancel
+     * @notice set nonce
      * @param _nonce: nonce
      * @param _value: value
      * @dev Only callable by owner.
@@ -185,6 +193,25 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
         uint256 _nonce
     ) public view returns (bool) {
         return _nonceValidators[_addr][_nonce];
+    }
+
+    /**
+     * @notice set deposit share percentage
+     * @param _tokenAddress: token address
+     * @param _value: value
+     * @dev Only callable by owner.
+     */
+    function setDepositSharePercentage(address _tokenAddress,uint256 _value) external onlyOwner {
+        require(_value<=10000,"invalid value");
+        emit DepositSharePercentageSet(msg.sender,_tokenAddress, depositSharePercentages[_tokenAddress], _value);
+        depositSharePercentages[_tokenAddress] = _value;
+    }
+
+    /**
+     * @notice deposit share percentage of token
+     */
+    function depositSharePercentageOf(address _token) public view returns (uint256) {
+        return depositSharePercentages[_token];
     }
 
     /**
@@ -301,7 +328,13 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
         }
 
         // transfer token
-        _transferToken(_fromAddress, address(this), _tokenAddress, _amount);
+        (uint256 depositToBridgeAmount, uint256 depositToTreasuryAmount) = splitDepositAmount(_tokenAddress,_amount);
+        _transferToken(_fromAddress, address(this), _tokenAddress, depositToBridgeAmount);
+
+        if (depositToTreasuryAmount > 0 ) {
+            _transferToken(_fromAddress, treasuryAddress, _tokenAddress, depositToTreasuryAmount);
+        }
+        
         // transfer fee
         if (_fee > 0) {
             require(
@@ -323,6 +356,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
             _nonce,
             _amount,
             _fee,
+            depositToTreasuryAmount,
             _deadline,
             validators_
         );
@@ -402,5 +436,16 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
     ) external onlyOwner {
         IKAP20(_tokenAddress).transfer(_toAddress, _tokenAmount);
         emit AdminTokenRecovery(_tokenAddress, _tokenAmount, _toAddress);
+    }
+
+    /**
+     * @notice split deposit amount 
+     * @param _tokenAddress: the address of the token
+     * @param _depositAmount: deposit amount 
+     * @dev Only callable by owner.
+     */
+    function splitDepositAmount(address _tokenAddress,uint256 _depositAmount) public view returns (uint256,uint256) {
+        uint256 treasuryAmount = (_depositAmount * depositSharePercentages[_tokenAddress])/10000;
+        return (_depositAmount - treasuryAmount, treasuryAmount);
     }
 }

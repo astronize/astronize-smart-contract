@@ -10,6 +10,12 @@ const config: HardhatUserConfig = {
     compilers: [
       {
         version: "0.8.19",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
       {
         version: "0.8.17",
@@ -80,7 +86,8 @@ const config: HardhatUserConfig = {
       "KAP165",
       "KAP721",
       "ASTToken",
-      "KAP721TransferRouter"
+      "KAP721TransferRouter",
+      "INFTResaleHandler"
     ]
   },
   networks: {

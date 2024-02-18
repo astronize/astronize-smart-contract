@@ -10,6 +10,7 @@ async function main() {
   const nextNFTTransferRouter = "0xbe152D81077bD3dA5C0243545aD530ac9e617A7a" //manual deploy
   
   const treasuryAddress = "0xf4A9AaaBc92501FA818190552aE3c7E4a3F306f5"
+  const nftResaleHandlerAddress = "0x70A354DA7e5eB14872ad2e259c01cA977Ac11eD1"
   const fee = 500 //2deci
   const minimumSalePrice = 100000000000000 //0.001, 18deci
 
@@ -22,7 +23,8 @@ async function main() {
     nextNFTTransferRouter, 
     treasuryAddress,
     fee,
-    minimumSalePrice
+    minimumSalePrice,
+    nftResaleHandlerAddress
     );
 
 

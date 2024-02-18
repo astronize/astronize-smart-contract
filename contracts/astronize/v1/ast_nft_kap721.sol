@@ -98,7 +98,7 @@ contract AstronizeCouponNFTKAP721 is KAP721 {
 
     mapping(uint256 => bool) private _tokenIdTracker;
 
-    function tokensOfOwner(address owner) public view returns (uint256[] memory) {
+    function tokensOfOwner(address owner) external view returns (uint256[] memory) {
         
         uint256 balance = balanceOf(owner);
         

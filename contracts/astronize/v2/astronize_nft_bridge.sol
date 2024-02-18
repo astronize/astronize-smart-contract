@@ -109,32 +109,32 @@ interface IKAP721 {
         setTreasuryAddress(_treasuryAddress);
     }
 
-    function setASTTokenAddress(address _tokenAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setASTTokenAddress(address _tokenAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         astTokenAddress = _tokenAddress;
     }
 
-    function setAcceptedKycLevel(uint256 _acceptedKycLevel) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
         acceptedKycLevel = _acceptedKycLevel;
     }
     
-    function setKyc(address _kyc) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setKyc(address _kyc) external onlyRole(DEFAULT_ADMIN_ROLE) {
         kyc = IKYC(_kyc);
     }
     
-    function setCallHelper(address _callHelper) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setCallHelper(address _callHelper) external onlyRole(DEFAULT_ADMIN_ROLE) {
         callHelper = _callHelper;
     }
     
-    function setNextTransferRouter(address _nextTransferRouter) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setNextTransferRouter(address _nextTransferRouter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         nextTransferRouter = INextTransferRouter(_nextTransferRouter);
     }
 
-    function getMintFee() public view returns (uint256)  {
+    function getMintFee() external view returns (uint256)  {
         return mintFee;
     }
 
-    function setMintFee(uint256 fee) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        mintFee = fee;
+    function setMintFee(uint256 _fee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        mintFee = _fee;
     }
 
     function setWhitelistNFTToken(address nftTokenAddress, bool isWhitelist)
@@ -249,54 +249,6 @@ interface IKAP721 {
 
     }
 
-    // for bitkubnext (remove)
-    // function mint(NFTMintParam calldata data, string memory tokenUri, bytes calldata signatures, address _bitkubnext) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) {
-    //     require(data.deadline > block.timestamp, "deadline");
-    //     require(data.nftAddress != address(0), "token address cannot be zero");
-    //     require(
-    //             isWhitelistNFTToken(data.nftAddress),
-    //             "nft token address not whitelisted"
-    //         );
-
-    //     IKAP721 nft = IKAP721(data.nftAddress);
-
-    //     //verify
-    //     bytes32 digest = _hashTypedDataV4(
-    //             keccak256(
-    //                 abi.encode(
-    //                     keccak256(
-    //                         "mint(address to,uint256 tokenId,uint256 nonce,uint256 deadline,string tokenUri,address nftAddress)"
-    //                     ),
-    //                     data.to,
-    //                     data.tokenId,
-    //                     data.nonce,
-    //                     data.deadline,
-    //                     keccak256(bytes(tokenUri)),
-    //                     data.nftAddress
-    //                 )
-    //             )
-    //         );
-
-    //     address signer = ECDSA.recover(digest, signatures);
-
-
-    //     require(trustedValidators[signer], "signer is not trusted validator");
-    //     require(!isMintConfirmed[signer][data.nonce], "signer already confirmed"); 
-    //     isMintConfirmed[signer][data.nonce] = true;
-
-    //     //fee cost (ignore if mint fee = 0)  #1000000000000000000
-    //     if (mintFee > 0) {
-    //         nextTransferRouter.transferFrom(PROJECT, address(astTokenAddress), _bitkubnext, treasuryAddress, mintFee);
-    //     }
-
-    //     //mint nft
-    //     nft.mint(data.to, data.tokenId);
-    //     nft.setTokenURI(data.tokenId, tokenUri);
-        
-    //     emit Mint(_bitkubnext, data.tokenId, data.to, data.nonce, data.nftAddress);
-
-    // }
-
 
     struct NFTMintWithSignParam {
         address to; 
@@ -373,7 +325,7 @@ interface IKAP721 {
         return tokens;
     }
 
-    function grantTrustedValidator(address _trustedValidator) public virtual {
+    function grantTrustedValidator(address _trustedValidator) external virtual {
         require(hasRole(MINTER_ROLE, _msgSender()), "permission denied");
 
         require(_trustedValidator != address(0), "trusted validator address cannot be zero");
@@ -386,7 +338,7 @@ interface IKAP721 {
         trustedValidatorCount++;
     }
 
-    function revokeTrustedValidator(address _trustedValidator) public virtual {
+    function revokeTrustedValidator(address _trustedValidator) external virtual {
         require(hasRole(MINTER_ROLE, _msgSender()), "permission denied");
 
         require(trustedValidators[_trustedValidator], "trusted validator not found");

@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "./nft/kap721/resource/token/KAP721.sol";
 import "./nft/kap721/resource/interfaces/IOwnerAccessControlRouter.sol";
 
-contract AstronizeCouponNFTKAP721 is KAP721 {
+contract AstronizeNFTKAP721 is KAP721 {
 
     event OwnerAccessControlRouterSet(address indexed operator, address indexed oldAddress, address indexed newAddress);
     event TokenURISet(address indexed sender, uint256 indexed tokenId, string indexed tokenURI);

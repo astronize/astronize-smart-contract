@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "./shared/interfaces/INextTransferRouter.sol";
 import "./shared/interfaces/INextNFTTransferRouter.sol";
+import "./shared/interfaces/INFTResaleHandler.sol";
 
 import "./shared/interfaces/IKYC.sol";
 
@@ -66,7 +67,8 @@ contract AstronizeMarketplace is
     event CallHelperChanged(address indexed sender, address indexed oldCallHelper, address indexed newCallHelper);
     event NextTransferRouterChanged(address indexed sender, address indexed oldNextTransferRouter, address indexed newNextTransferRouter);
     event NextNFTTransferRouterChanged(address indexed sender, address indexed oldNextNFTTransferRouter, address indexed newNextNFTTransferRouter);
-    
+    event NFTResaleHandlerChanged(address indexed sender, address indexed oldNFTResaleHandler, address indexed newNFTResaleHandler);
+
 
     struct NFTSellInfo {
         address nftTokenAddress; //nft address
@@ -80,6 +82,7 @@ contract AstronizeMarketplace is
     }
 
     NFTSellInfo[] internal _nftInMarketplace;
+
 
     mapping(address => mapping(uint256 => uint256)) internal _indexOfTokenIds;
     
@@ -102,6 +105,7 @@ contract AstronizeMarketplace is
     INextTransferRouter public nextTransferRouterKap20;
     INextNFTTransferRouter public nextNFTTransferRouterKap721;
     IKYC public kyc;
+    INFTResaleHandler public nftResaleHandler;
 
     modifier onlyCallHelper() {
         require(msg.sender == callHelper, "onlyCallHelper: restricted only call helper");
@@ -122,7 +126,8 @@ contract AstronizeMarketplace is
 
         address _treasuryAddress,
         uint256 _fee,
-        uint256 _minimumSalePrice
+        uint256 _minimumSalePrice,
+        address _nftResaleHandlerAddress
 
     ) {
         
@@ -136,12 +141,18 @@ contract AstronizeMarketplace is
 
         nextTransferRouterKap20 = INextTransferRouter(_nextTransferRouterKap20);
         nextNFTTransferRouterKap721 = INextNFTTransferRouter(_nextNFTTransferRouterKap721);
+        nftResaleHandler = INFTResaleHandler(_nftResaleHandlerAddress);
 
         setTreasuryAddress(_treasuryAddress);
         setFee(_fee);
         setMinimumSalePrice(_minimumSalePrice);
     }
     
+    function setNFTResaleHandler(address _nftResaleHandlerAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit NFTResaleHandlerChanged(msg.sender, address(nftResaleHandler), _nftResaleHandlerAddress);
+        nftResaleHandler = INFTResaleHandler(_nftResaleHandlerAddress);
+    }
+
     function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
         emit AcceptedKycLevelChanged(msg.sender, acceptedKycLevel, _acceptedKycLevel);
         acceptedKycLevel = _acceptedKycLevel;
@@ -194,6 +205,7 @@ contract AstronizeMarketplace is
         require(price > minimumSalePrice, "price must be greater than the minimum sale price");
         require(isWhitelistNFTToken(nftTokenAddress),"nft token address not whitelisted");
         require(isWhitelistCurrencyToken(currencyTokenAddress),"currency token address not whitelisted");
+        require(nftResaleHandler.canSell(nftTokenAddress, tokenId), "this nft can't sell");
 
         //bitkubnext transfer
         nextNFTTransferRouterKap721.transferFromKAP721(PROJECT, address(nftTokenAddress), _bitkubnext, address(this), tokenId);
@@ -225,6 +237,7 @@ contract AstronizeMarketplace is
         require(price > minimumSalePrice, "price must be greater than the minimum sale price");
         require(isWhitelistNFTToken(nftTokenAddress),"nft token address not whitelisted");
         require(isWhitelistCurrencyToken(currencyTokenAddress),"currency token address not whitelisted");
+        require(nftResaleHandler.canSell(nftTokenAddress, tokenId), "this nft can't sell");
 
         IERC721(nftTokenAddress).safeTransferFrom(
             msg.sender,
@@ -303,6 +316,9 @@ contract AstronizeMarketplace is
             _bitkubnext,
             tokenId
         );
+
+        //update sell status
+        nftResaleHandler.setSold(nftTokenAddress, tokenId);
 
         emit Buy(
             _bitkubnext,

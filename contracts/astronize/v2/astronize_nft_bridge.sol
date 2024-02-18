@@ -48,6 +48,15 @@ interface IKAP721 {
     event Redeem(address indexed sender, uint256 indexed nonce, uint256 tokenId, address nftAddress);
     event WhitelistNFTTokenUpdated(address indexed sender,address indexed nftTokenAddress, bool indexed isWhitelist);
 
+    event ASTTokenAddresChanged(address indexed sender, address indexed oldASTTokenAddress,  address indexed newASTTokenAddress);
+    event AcceptedKycLevelChanged(address indexed sender, uint256 indexed oldAcceptedKycLevel, uint256 indexed newAcceptedKycLevel);
+    event KycChanged(address indexed sender, address indexed oldKyc, address indexed newKyc);
+    event CallHelperChanged(address indexed sender, address indexed oldCallHelper, address indexed newCallHelper);
+    event NextTransferRouterChanged(address indexed sender, address indexed oldNextTransferRouter, address indexed newNextTransferRouter);
+    event MintFeeChanged(address indexed sender, uint256 indexed oldMintFee, uint256 indexed newMintFee);
+    event GrantTrustedValidatorChanged(address indexed sender, address indexed trustedValidator);
+    event RevokeTrustedValidatorChanged(address indexed sender, address indexed trustedValidator);
+
     mapping(address => bool) internal _whitelistNFTTokens;
 
     //role init
@@ -108,24 +117,29 @@ interface IKAP721 {
 
         setTreasuryAddress(_treasuryAddress);
     }
-
+  
     function setASTTokenAddress(address _tokenAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit ASTTokenAddresChanged(_msgSender(), astTokenAddress, _tokenAddress);
         astTokenAddress = _tokenAddress;
     }
 
-    function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
+   function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit AcceptedKycLevelChanged( _msgSender(), acceptedKycLevel, _acceptedKycLevel);
         acceptedKycLevel = _acceptedKycLevel;
     }
     
     function setKyc(address _kyc) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit KycChanged(_msgSender(), address(kyc), _kyc);
         kyc = IKYC(_kyc);
     }
     
     function setCallHelper(address _callHelper) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit CallHelperChanged(_msgSender(), callHelper, _callHelper);
         callHelper = _callHelper;
     }
     
     function setNextTransferRouter(address _nextTransferRouter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit NextTransferRouterChanged(_msgSender(), address(nextTransferRouter), _nextTransferRouter);
         nextTransferRouter = INextTransferRouter(_nextTransferRouter);
     }
 
@@ -134,6 +148,7 @@ interface IKAP721 {
     }
 
     function setMintFee(uint256 _fee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit MintFeeChanged(_msgSender(), mintFee, _fee);
         mintFee = _fee;
     }
 
@@ -324,7 +339,7 @@ interface IKAP721 {
 
         return tokens;
     }
-
+   
     function grantTrustedValidator(address _trustedValidator) external virtual {
         require(hasRole(MINTER_ROLE, _msgSender()), "permission denied");
 
@@ -334,6 +349,7 @@ interface IKAP721 {
             "trusted validator already granted"
         );
 
+        emit GrantTrustedValidatorChanged(_msgSender(), _trustedValidator);
         trustedValidators[_trustedValidator] = true;
         trustedValidatorCount++;
     }
@@ -343,6 +359,7 @@ interface IKAP721 {
 
         require(trustedValidators[_trustedValidator], "trusted validator not found");
 
+        emit RevokeTrustedValidatorChanged(_msgSender(), _trustedValidator);
         trustedValidators[_trustedValidator] = false;
         trustedValidatorCount--;
     }

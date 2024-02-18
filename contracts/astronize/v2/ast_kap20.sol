@@ -22,6 +22,9 @@ contract ASTTokenKAP20 is KAP20 {
     string private constant _MINTER_NAME = "MINTER";
     string private constant _BURNER_NAME = "BURNER";
 
+
+    event OwnerAccessControlRouterSet(address indexed operator, address indexed oldAddress, address indexed newAddress);
+
     modifier onlyMinter() {
         require(
            (address(ownerAccessControlRouter) != address(0) &&
@@ -76,6 +79,7 @@ contract ASTTokenKAP20 is KAP20 {
     }
 
     function setOwnerAccessControlRouter(address _ownerAccessControlRouter) external onlyOwner {
+        emit OwnerAccessControlRouterSet(msg.sender, address(ownerAccessControlRouter), _ownerAccessControlRouter);
         ownerAccessControlRouter = IOwnerAccessControlRouter(_ownerAccessControlRouter);
     }
 

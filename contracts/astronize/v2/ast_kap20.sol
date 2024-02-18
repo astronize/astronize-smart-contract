@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 import "./kap20/token/KAP20.sol";
 import "./kap20/interfaces/IOwnerAccessControlRouter.sol";

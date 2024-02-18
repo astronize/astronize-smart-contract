@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 import "../interfaces/IKAP20/IKAP20.sol";
 import "../interfaces/IKToken.sol";

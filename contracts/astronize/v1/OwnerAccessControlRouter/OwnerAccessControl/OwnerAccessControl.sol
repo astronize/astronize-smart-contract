@@ -767,7 +767,7 @@ abstract contract AccessControl is Context {
 // File contracts/OwnerAccessControl.sol
 
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 contract OwnerAccessControl is AccessControl {
     string private constant ROOT_OWNER_ROLE = "ROOT_OWNER_ROLE";

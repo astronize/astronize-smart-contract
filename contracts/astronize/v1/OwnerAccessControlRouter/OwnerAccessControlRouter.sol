@@ -16,7 +16,7 @@ interface IOwnerAccessControl {
 // File contracts/OwnerAccessControlRouter.sol
 
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 contract OwnerAccessControlRouter {
     IOwnerAccessControl public ownerAccessControl;

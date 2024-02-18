@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
+    "dotenv": "^16.4.4",
     "hardhat-abi-exporter": "^2.10.0",
     "soltypes": "^2.0.0",
     "web3": "^1.7.5"

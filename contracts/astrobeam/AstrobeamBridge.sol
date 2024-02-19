@@ -2,14 +2,14 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "./abstracts/AstronizeBitkubBase.sol";
 import "./shared/interfaces/IKAP20/IKAP20.sol";
 import "./shared/interfaces/IOwnerAccessControlRouter.sol";
 import "./interfaces/IAdminKAP20Router.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
+contract AstrobeamBridge is EIP712, AstronizeBitkubBase {
+    using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     event Withdrawal(
@@ -141,7 +141,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
     /**
      * @notice get nonce
      */
-    function nonceOf(uint256 _nonce) public view returns (bool) {
+    function nonceOf(uint256 _nonce) external view returns (bool) {
         return _nonces[_nonce];
     }
 
@@ -169,7 +169,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
     function getValidators(
         uint256 startIndex,
         uint256 endIndex
-    ) public view returns (address[] memory) {
+    ) external view returns (address[] memory) {
         require(endIndex >= startIndex, "Invalid range");
 
         uint256 setLength = _validators.length();
@@ -191,7 +191,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
     function nonceValidatorOf(
         address _addr,
         uint256 _nonce
-    ) public view returns (bool) {
+    ) external view returns (bool) {
         return _nonceValidators[_addr][_nonce];
     }
 
@@ -210,7 +210,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
     /**
      * @notice deposit share percentage of token
      */
-    function depositSharePercentageOf(address _token) public view returns (uint256) {
+    function depositSharePercentageOf(address _token) external view returns (uint256) {
         return depositSharePercentages[_token];
     }
 
@@ -260,7 +260,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
         }
 
         // transfer token
-        IKAP20(_tokenAddress).transfer(_toAddress, _amount);
+        IERC20(_tokenAddress).safeTransfer(_toAddress, _amount);
         // transfer fee
         if (_fee > 0) {
             require(
@@ -434,7 +434,7 @@ contract AstrobeamBridge is EIP712, Pausable, AstronizeBitkubBase {
         uint256 _tokenAmount,
         address _toAddress
     ) external onlyOwner {
-        IKAP20(_tokenAddress).transfer(_toAddress, _tokenAmount);
+        IERC20(_tokenAddress).safeTransfer(_toAddress, _tokenAmount);
         emit AdminTokenRecovery(_tokenAddress, _tokenAmount, _toAddress);
     }
 

@@ -5,8 +5,11 @@ import "./abstracts/AstronizeBitkubBase.sol";
 import "./shared/interfaces/IKAP721/IKAP721.sol";
 import "./shared/interfaces/INextNFTTransferRouter.sol";
 import "./shared/abstracts/KAP721Holder.sol";
+import "./interfaces/INFTResaleHandler.sol";
 
 contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
+    using SafeERC20 for IERC20;
+
     event NextNFTTransferRouterSet(
         address indexed caller,
         address indexed oldAddress,
@@ -67,7 +70,9 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
     );
     event FeePercentageSet(address indexed sender, uint256 value);
     event ExtendedDurationSet(address indexed sender, uint256 value);
-    event MinDurationSet(address indexed sender, uint256 value);
+    event MinMaxDurationSet(address indexed sender, uint256 min,uint256 max);
+    event MinMaxPriceSet(address indexed sender,uint256 min,uint256 max);
+    event NftResaleHandlerSet(address indexed sender, address nftResaleHandler);
 
     enum ItemStatus {
         None,
@@ -100,6 +105,10 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
     uint256 public feePercentage;
     uint256 public extendedDuration;
     uint256 public minDuration;
+    uint256 public maxDuration;
+    uint256 public minPrice;
+    uint256 public maxPrice = 100000000 ether;
+    INFTResaleHandler public nftResaleHandler;
 
     constructor(
         address _adminProjectRouter,
@@ -110,7 +119,10 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
         address _nextTransferRouter,
         address _nextNFTTransferRouter,
         address _treasuryAddress,
-        address _callHelper
+        address _callHelper,
+        address _nftResaleHandler,
+        uint256 _minDuration,
+        uint256 _maxDuration
     ) {
         // Initialize BitkubChain
         PROJECT = "astronize";
@@ -127,13 +139,23 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
         nextNFTTransferRouter = INextNFTTransferRouter(_nextNFTTransferRouter);
         treasuryAddress = _treasuryAddress;
         callHelper = _callHelper;
-        minDuration = 5 minutes;
+        nftResaleHandler = INFTResaleHandler(_nftResaleHandler);
+        minDuration = _minDuration;
+        maxDuration = _maxDuration;
+    }
+
+    /**
+     * @notice set nft resale handler
+     */
+    function setNftResaleHandler(address _nftResaleHandler) external onlyOwner {
+        nftResaleHandler = INFTResaleHandler(_nftResaleHandler);
+        emit NftResaleHandlerSet(msg.sender,_nftResaleHandler);
     }
 
     /**
      * @notice whitelisted NFT
      */
-    function whitelistedNftOf(address _nftAddress) public view returns (bool) {
+    function whitelistedNftOf(address _nftAddress) external view returns (bool) {
         return _whitelistedNfts[_nftAddress];
     }
 
@@ -142,7 +164,7 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
      */
     function whitelistedTokenOf(
         address _tokenAddress
-    ) public view returns (WhitelistedToken memory) {
+    ) external view returns (WhitelistedToken memory) {
         return _whitelistedTokens[_tokenAddress];
     }
 
@@ -152,7 +174,7 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
     function itemOf(
         address _nftAddress,
         uint256 _tokenId
-    ) public view returns (Item memory) {
+    ) external view returns (Item memory) {
         return _items[_nftAddress][_tokenId];
     }
 
@@ -174,11 +196,12 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
     }
 
     /**
-     * @notice set minimum duration
+     * @notice set min and max duration
      */
-    function setMinDuration(uint256 _minDuration) external onlyOwner {
-        minDuration = _minDuration;
-        emit MinDurationSet(msg.sender, _minDuration);
+    function setMinMaxDuration(uint256 _min, uint256 _max) external onlyOwner {
+        minDuration = _min;
+        maxDuration = _max;
+        emit MinMaxDurationSet(msg.sender, _min,_max);
     }
 
     /**
@@ -204,6 +227,16 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
         });
 
         emit WhitelistedTokenSet(_address, _isActive, _step);
+    }
+
+    /**
+     * @notice set min and max price
+     */
+    function setMinMaxPrice(uint256 _min, uint256 _max) external onlyOwner {
+        minPrice = _min;
+        maxPrice = _max;
+
+        emit MinMaxPriceSet(msg.sender,_min, _max);
     }
 
     /**
@@ -335,14 +368,12 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
         if (_startAt < block.timestamp) {
             _startAt = block.timestamp;
         }
+        require(nftResaleHandler.canSell(_tokenAddress, _tokenId),"cannot sell");
 
         // check time
         require(_startAt < _endAt, "startAt must be less than endAt");
         require(_endAt >= block.timestamp + minDuration, "endAt");
-        require(
-            _endAt < block.timestamp + (90 days),
-            "endAt must be less than 60 days"
-        );
+        require(_endAt < block.timestamp + maxDuration,"max endAt");
         require((_endAt - _startAt) >= minDuration, "duration");
 
         // check nft and token
@@ -352,6 +383,7 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
         ];
         require(_price % _whitelistedToken.step == 0, "price step");
         require(_whitelistedToken.isActive, "whitelisted token");
+        require(_price >= minPrice && _price <= maxPrice,"price");
 
         // store item
         Item memory _item = Item({
@@ -411,16 +443,18 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
         require(_item.price < _price, "require higher price");
         require(_item.status == ItemStatus.Active, "status");
         require(_tokenAddress == _item.tokenAddress, "tokenAddress");
+        require(_user != _item.sellerAddress, "seller");
 
         // check step
         WhitelistedToken storage _whitelistedToken = _whitelistedTokens[
             _tokenAddress
         ];
         require(_price % _whitelistedToken.step == 0, "price step");
+        require(_price >= minPrice && _price <= maxPrice,"price");
 
         // transfer token to previous bidder
         if (_item.bidderAddress != address(0)) {
-            IKAP20(_tokenAddress).transfer(_item.bidderAddress, _item.price);
+            IERC20(_tokenAddress).safeTransfer(_item.bidderAddress, _item.price);
         }
 
         // transfer token
@@ -542,7 +576,7 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
 
         // transfer token to previous bidder
         if (_item.bidderAddress != address(0)) {
-            IKAP20(_item.tokenAddress).transfer(
+            IERC20(_item.tokenAddress).safeTransfer(
                 _item.bidderAddress,
                 _item.price
             );
@@ -591,7 +625,7 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
         _item.status = ItemStatus.Claimed;
 
         // transfer nft to bidder
-        IKAP721(_nftAddress).safeTransferFrom(
+        IKAP721(_nftAddress).transferFrom(
             address(this),
             _item.bidderAddress,
             _tokenId
@@ -602,10 +636,13 @@ contract AstronizeAuction is AstronizeBitkubBase, KAP721Holder {
             _item.price,
             feePercentage
         );
-        IKAP20(_item.tokenAddress).transfer(_item.sellerAddress, _sellerPrice);
+        IERC20(_item.tokenAddress).safeTransfer(_item.sellerAddress, _sellerPrice);
         if (_fee > 0) {
-            IKAP20(_item.tokenAddress).transfer(treasuryAddress, _fee);
+            IERC20(_item.tokenAddress).safeTransfer(treasuryAddress, _fee);
         }
+
+        // set sold
+        nftResaleHandler.setSold(_nftAddress, _tokenId);
 
         emit Claim(
             _user,

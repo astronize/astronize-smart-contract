@@ -13,7 +13,7 @@ async function main() {
   const acceptedKycLevel = 0 //default 
   const ownerAccessControlRouter = "0x85bC9F9A9651e8087F7532A7aC0df00Cd39653F0"
 
-  const AstronizeCouponNFTKAP721 = await ethers.getContractFactory("AstronizeCouponNFTKAP721"); 
+  const AstronizeCouponNFTKAP721 = await ethers.getContractFactory("AstronizeNFTKAP721"); 
   const astronizeCouponNFTKAP721 = await AstronizeCouponNFTKAP721.deploy(
     name,
     symbol,
@@ -52,7 +52,7 @@ main().catch((error) => {
 run script
 cd /Users/jirapongpangbud/Documents/go-workspace/src/astronize-smart-contract/scripts
 nvm use v18.16.0
-npx hardhat run v1/ast_nft_kap721_TSX.ts --network bitkub
-npx hardhat flatten ../contracts/astronize/v1/ast_nft_kap721.sol > ../flatten/ast_nft_kap721.sol
+npx hardhat run ast_nft_kap721_TSX.ts --network bitkub
+npx hardhat flatten ../contracts/astronize/ast_nft_kap721.sol > ../flatten/ast_nft_kap721.sol
 
 */

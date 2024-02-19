@@ -56,5 +56,5 @@ main().catch((error) => {
   nvm use v18.16.0
   cd /Users/jirapongpangbud/Documents/go-workspace/src/astronize-smart-contract/scripts
   npx hardhat run astronize_nft_bridge.ts --network bitkub
-  npx hardhat flatten ../contracts/astronize/v2/astronize_nft_bridge.sol > ../flatten/astronize_nft_bridge.sol
+  npx hardhat flatten ../contracts/astronize/astronize_nft_bridge.sol > ../flatten/astronize_nft_bridge.sol
 */

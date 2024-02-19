@@ -8,3 +8,4 @@ o.sol
 flatten/
 .DS_Store
 .vscode/settings.json
+.env

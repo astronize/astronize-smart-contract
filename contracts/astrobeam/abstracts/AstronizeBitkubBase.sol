@@ -6,8 +6,10 @@ import "../shared/interfaces/IOwnerAccessControlRouter.sol";
 import "./BitkubChain.sol";
 import "../shared/interfaces/INextTransferRouter.sol";
 import "../shared/interfaces/IKAP20/IAstrobeamKAP20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract AstronizeBitkubBase is Pausable, BitkubChain {
+    using SafeERC20 for IERC20;
     event NextTransferRouterSet(address indexed caller, address indexed oldAddress, address indexed newAddress);
     event CallHelperSet(address from,address to);
     event OwnerAccessControlRouterSet(
@@ -23,6 +25,7 @@ abstract contract AstronizeBitkubBase is Pausable, BitkubChain {
     string private constant _OWNER_NAME = "OWNER";
     string private constant _OPERATOR_NAME = "OPERATOR";
     string private constant _MODERATOR_NAME = "MODERATOR";
+    string private constant _PAUSER_NAME = "PAUSER";
 
     modifier onlyOwner() {
         require(
@@ -47,6 +50,15 @@ abstract contract AstronizeBitkubBase is Pausable, BitkubChain {
             (address(ownerAccessControlRouter) != address(0) &&
                 ownerAccessControlRouter.isOwner(_MODERATOR_NAME, msg.sender)),
             "Restricted only moderator"
+        );
+        _;
+    }
+
+    modifier onlyPauser() {
+        require(
+            (address(ownerAccessControlRouter) != address(0) &&
+                ownerAccessControlRouter.isOwner(_PAUSER_NAME, msg.sender)),
+            "Restricted only pauser"
         );
         _;
     }
@@ -91,11 +103,11 @@ abstract contract AstronizeBitkubBase is Pausable, BitkubChain {
         );
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyPauser {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyPauser {
         _unpause();
     }
 
@@ -122,7 +134,7 @@ abstract contract AstronizeBitkubBase is Pausable, BitkubChain {
             nextTransferRouter.transferFrom(PROJECT, token, from, to, amount);
         } else {
             // meta mask
-            IKAP20(token).transferFrom(from, to, amount);
+            IERC20(token).safeTransferFrom(from, to, amount);
         }
     }
 }

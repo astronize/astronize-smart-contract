@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./shared/interfaces/IKAP20/IKAP20.sol";
 import "./shared/interfaces/INextNFTTransferRouter.sol";
 import "./shared/interfaces/IKAP721/IKAP721.sol";
+import "./interfaces/INFTResaleHandler.sol";
 
 contract AstronizeOffer is AstronizeBitkubBase {
     event OfferCreated(
@@ -38,6 +39,10 @@ contract AstronizeOffer is AstronizeBitkubBase {
         address indexed newAddress
     );
     event FeePercentageSet(address indexed sender, uint256 value);
+    event WhitelistedTokenSet(address indexed tokenAddress, bool isActive);
+    event MaxDurationSet(address indexed sender, uint256 value);
+    event MinMaxPriceSet(address indexed sender,uint256 min,uint256 max);
+    event NftResaleHandlerSet(address indexed sender, address nftResaleHandler);
 
     enum OfferStatus {
         None,
@@ -58,7 +63,12 @@ contract AstronizeOffer is AstronizeBitkubBase {
         internal _offers;
     address public treasuryAddress;
     uint256 public feePercentage;
+    uint256 public maxDuration = 7 days;
     INextNFTTransferRouter public nextNFTTransferRouter;
+    mapping(address => bool) internal whitelistedTokens;
+    uint256 public minPrice;
+    uint256 public maxPrice = 100000000 ether;
+    INFTResaleHandler public nftResaleHandler;
 
     constructor(
         address _adminProjectRouter,
@@ -69,7 +79,8 @@ contract AstronizeOffer is AstronizeBitkubBase {
         address _nextTransferRouter,
         address _nextNFTTransferRouter,
         address _treasuryAddress,
-        address _callHelper
+        address _callHelper,
+        address _nftResaleHandler
     ) {
         // Initialize BitkubChain
         PROJECT = "astronize";
@@ -86,6 +97,15 @@ contract AstronizeOffer is AstronizeBitkubBase {
         nextNFTTransferRouter = INextNFTTransferRouter(_nextNFTTransferRouter);
         treasuryAddress = _treasuryAddress;
         callHelper = _callHelper;
+        nftResaleHandler = INFTResaleHandler(_nftResaleHandler);
+    }
+
+     /**
+     * @notice set nft resale handler
+     */
+    function setNftResaleHandler(address _nftResaleHandler) external onlyOwner {
+        nftResaleHandler = INFTResaleHandler(_nftResaleHandler);
+        emit NftResaleHandlerSet(msg.sender,_nftResaleHandler);
     }
 
     /**
@@ -105,6 +125,39 @@ contract AstronizeOffer is AstronizeBitkubBase {
         feePercentage = _feePercentage;
         emit FeePercentageSet(msg.sender, _feePercentage);
     }
+     
+     /**
+     * @notice set max duration
+     */
+    function setMaxDuration(uint256 _maxDuration) external onlyOwner {
+        maxDuration = _maxDuration;
+        emit MaxDurationSet(msg.sender, _maxDuration);
+    }
+
+     /**
+     * @notice set min and max price
+     */
+    function setMinMaxPrice(uint256 _min, uint256 _max) external onlyOwner {
+        minPrice = _min;
+        maxPrice = _max;
+
+        emit MinMaxPriceSet(msg.sender,_min, _max);
+    }
+
+     /**
+     * @notice set whitelisted token
+     */
+    function setWhitelistedToken(address _token,bool _isActive) external onlyOwner {
+        whitelistedTokens[_token] = _isActive;
+        emit WhitelistedTokenSet(_token, _isActive);
+    }
+
+     /**
+     * @notice get whitelisted token
+     */
+    function whitelistedTokenOf(address _token) public view returns(bool) {
+        return whitelistedTokens[_token];
+    }
 
     /**
      * @notice offer of
@@ -113,7 +166,7 @@ contract AstronizeOffer is AstronizeBitkubBase {
         address _offerorAddress,
         address _nftAddress,
         uint256 _tokenId
-    ) public view returns (Offer memory) {
+    ) external view returns (Offer memory) {
         return _offers[_offerorAddress][_nftAddress][_tokenId];
     }
 
@@ -183,11 +236,13 @@ contract AstronizeOffer is AstronizeBitkubBase {
         uint256 _endAt,
         address _offerorAddress
     ) internal {
-        require(_endAt <= block.timestamp + (366 days), "offer: max duration");
+        require(whitelistedTokens[_tokenAddress], "offer: not whitelisted");
+        require(_endAt <= block.timestamp + maxDuration, "offer: max duration");
         require(
             IKAP20(_tokenAddress).balanceOf(_offerorAddress) >= _amount,
             "offer: balance"
         );
+        require(_amount >= minPrice && _amount <= maxPrice,"offer: amount");
 
         Offer storage _offer = _offers[_offerorAddress][_nftAddress][_tokenId];
 
@@ -273,8 +328,12 @@ contract AstronizeOffer is AstronizeBitkubBase {
         address _offerorAddress,
         address _sellerAddress
     ) internal {
-        Offer storage _offer = _offers[_offerorAddress][_nftAddress][_tokenId];
+        // check nft resale
+        require(nftResaleHandler.canSell(_tokenAddress, _tokenId),"cannot sell");
+        nftResaleHandler.setSold(_tokenAddress, _tokenId); 
 
+        // check offer
+        Offer storage _offer = _offers[_offerorAddress][_nftAddress][_tokenId];
         require(_offer.status == OfferStatus.Created, "offer: status");
         require(_offer.tokenAddress == _tokenAddress, "offer: token address");
         require(_offer.amount == _amount, "offer: amount");

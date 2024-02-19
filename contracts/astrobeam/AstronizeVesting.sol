@@ -5,22 +5,27 @@ import "./library/BokkyPooBahsDateTimeLibrary.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract AstronizeVesting is AccessControl {
+    using SafeERC20 for IERC20;
     using BokkyPooBahsDateTimeLibrary for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     event Claim(
-        address indexed sender,
+        address indexed user,
         uint256 indexed month,
         uint256 indexed year,
+        address sender,
         uint256 timestamp
     );
     event WalletsAdded(address indexed sender, address[] wallets);
     event WalletsRemoved(address indexed sender, address[] wallets);
 
     // mapping year => month => is claimed
-    mapping(uint256 => mapping(uint256 => bool)) internal _claims;
+    mapping(uint256 => mapping(uint256 => mapping(address => bool))) internal _claims;
+    mapping(uint256 => mapping(uint256 => uint256)) internal _claimCounts;
+    mapping(address => bool) public isFirstTransfers;
     EnumerableSet.AddressSet internal _wallets;
     IERC20 public token;
     uint256 public transferAmount;
@@ -28,7 +33,6 @@ contract AstronizeVesting is AccessControl {
     uint256[] public claimableMonths;
     uint256 public desiredNumWallets;
     uint256 public firstTransferAmount;
-    bool public isFirstTransfer;
 
     constructor(
         address _tokenAddress,
@@ -57,10 +61,35 @@ contract AstronizeVesting is AccessControl {
     }
 
     /**
+     * @notice get claim
+     */
+    function claimOf(uint256 month,uint256 year,address user) external view returns (bool) {
+        return _claims[month][year][user];
+    }
+
+    /**
+     * @notice get claim count
+     */
+    function claimCountOf(uint256 month,uint256 year) external view returns (uint256) {
+        return _claimCounts[month][year];
+    }
+
+    /**
+     * @notice batch claim
+     */
+    function batchClaim(address[] calldata users,uint256 month, uint256 year) external {
+        for (uint256 i = 0;i<users.length;i++) {
+            claim(users[i], month, year);
+        }
+    }
+
+    /**
      * @notice claim token
      */
-    function claim(uint256 month, uint256 year) external {
-        require(desiredNumWallets == walletLength(), "invalid num wallets");
+    function claim(address user,uint256 month, uint256 year) public {
+        // check claim count
+        require(_claimCounts[month][year]<=desiredNumWallets,"claim count");
+        _claimCounts[month][year]++;
 
         // check month
         require(inArray(claimableMonths, month), "invalid month");
@@ -71,14 +100,14 @@ contract AstronizeVesting is AccessControl {
         require(claimTime >= startAt, "start at");
 
         // check claim
-        require(!_claims[month][year], "already claimed");
-        _claims[month][year] = true;
+        require(!_claims[month][year][user], "already claimed");
+        _claims[month][year][user] = true;
 
         // transfer token
-        _transferToken();
+        _transferToken(user);
 
         // emit event
-        emit Claim(msg.sender, month, year, block.timestamp);
+        emit Claim(user, month, year,msg.sender, block.timestamp);
     }
 
     /**
@@ -112,12 +141,12 @@ contract AstronizeVesting is AccessControl {
     /**
      * @notice transfer token to wallets
      */
-    function _transferToken() internal {
+    function _transferToken(address user) internal {
         uint256 _transferAmount;
 
         // check is first transfer
-        if (!isFirstTransfer) {
-            isFirstTransfer = true;
+        if (!isFirstTransfers[user]) {
+            isFirstTransfers[user] = true;
             _transferAmount = firstTransferAmount;
         }
 
@@ -126,12 +155,7 @@ contract AstronizeVesting is AccessControl {
             _transferAmount = transferAmount;
         }
 
-        // transfer
-        uint256 numUsers = _wallets.length();
-        for (uint256 i = 0; i < numUsers; i++) {
-            address user = _wallets.at(i);
-            token.transfer(user, _transferAmount);
-        }
+        token.safeTransfer(user, _transferAmount);
     }
 
     /**
@@ -173,7 +197,7 @@ contract AstronizeVesting is AccessControl {
     /**
      * @notice list wallet
      */
-    function wallets() public view returns (address[] memory) {
+    function wallets() external view returns (address[] memory) {
         address[] memory walletList = new address[](_wallets.length());
         for (uint256 i = 0; i < _wallets.length(); i++) {
             address user = _wallets.at(i);

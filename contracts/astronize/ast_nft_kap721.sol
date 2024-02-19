@@ -14,6 +14,17 @@ contract AstronizeNFTKAP721 is KAP721 {
     string private constant _MINTER_NAME = "MINTER";
     string private constant _BURNER_NAME = "BURNER";
 
+    string public constant _PAUSER_ROLE = "PAUSER_ROLE";
+
+    modifier onlyPause() {
+        require(
+           (address(ownerAccessControlRouter) != address(0) &&
+                    ownerAccessControlRouter.isOwner(_PAUSER_ROLE, msg.sender)),
+            "Restricted only pause role"
+        );
+        _;
+    }
+
     modifier onlyOwner() {
         require(
             (address(ownerAccessControlRouter) != address(0) &&
@@ -89,11 +100,11 @@ contract AstronizeNFTKAP721 is KAP721 {
         _setBaseURI(_baseURI);
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyPause {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyPause {
         _unpause();
     }
 

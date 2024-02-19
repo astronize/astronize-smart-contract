@@ -123,7 +123,7 @@ interface IKAP721 {
         astTokenAddress = _tokenAddress;
     }
 
-   function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
         emit AcceptedKycLevelChanged( _msgSender(), acceptedKycLevel, _acceptedKycLevel);
         acceptedKycLevel = _acceptedKycLevel;
     }

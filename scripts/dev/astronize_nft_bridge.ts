@@ -12,7 +12,7 @@ async function main() {
   const nextTransferRouterAddress = "0x3Ddf950176AD0ab4A3De258dCe6B7f0F0c763567" //manual deploy
   // const nextTransferRouter = "0xf3EAB4809D2c749EA09590dfa2DE24aeF8576f13" //bitkub deploy
   
-  const tokenAddress = "0x270e298eE53948Bb8012076C6e679BD5d3449c57" //ast token
+  const tokenAddress = "0xaE66074Ff1fFdaDf96fCf3A031EccdB946b85824" //ast token
   const treasuryAddress = "0xf4A9AaaBc92501FA818190552aE3c7E4a3F306f5"
 
 
@@ -37,7 +37,7 @@ async function main() {
     * 5. set bitkub whitelist (RestAPI)
   */
 
-  const tsxNftAddress = "0x42DB0e4fAe80757B06bbC3D83CF9b1798EefC132" //tsx nft
+  const tsxNftAddress = "0x04Bbc463A0fCAa1073408115cfD4af2df0173B94" //tsx nft
   const ownerAccessControlAddress = "0xB59ABD01761B011B4Af24c2D6Efb5930F834968A" //tsx nft
   const project = "astronize"
 

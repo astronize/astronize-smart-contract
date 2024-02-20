@@ -43,7 +43,7 @@ async function main() {
 
   const validaterAddress_1 = "0xB88D7e756428c886Ce4aD29E7ecAED17A994EDc2" 
   const validaterAddress_2 = "0xf4A9AaaBc92501FA818190552aE3c7E4a3F306f5" 
-  const validaterAddress_3 = "0x3Ddf950176AD0ab4A3De258dCe6B7f0F0c763567" 
+  const validaterAddress_3 = "0x4B7c4cc1818E110582940983e261E91d9a463b8D" 
 
   const roleOwner = "0x6270edb7c868f86fda4adedba75108201087268ea345934db8bad688e1feb91b"
   const roleBurner = "0x9667e80708b6eeeb0053fa0cca44e028ff548e2a9f029edfeac87c118b08b7c8"

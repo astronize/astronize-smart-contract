@@ -29,7 +29,7 @@ async function main() {
     ownerAccessControlRouter
     );
 
-
+ 
   console.log(`deployed to ${astronizeToken.address}`);
 }
 

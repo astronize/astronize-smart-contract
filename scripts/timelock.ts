@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 async function main() {
   
   const admin = "0xf4A9AaaBc92501FA818190552aE3c7E4a3F306f5";
-  const delay = 1;
+  const delay = 6*60*60;
 
   const Timelock = await ethers.getContractFactory("Timelock"); 
   const timelock = await Timelock.deploy(

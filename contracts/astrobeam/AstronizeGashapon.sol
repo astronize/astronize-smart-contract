@@ -181,19 +181,12 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
      */
     function editCollection(
         uint256 _collectionId,
-        address _tokenAddress,
-        uint256 _price,
         bool _isActive
     ) external onlyModerator {
-        require(_tokenAddress != address(0), "treasury address");
-        require(_price != 0, "treasury address");
-
         // get collection
         Collection storage _collection = _collections[_collectionId];
 
         // set collection
-        _collection.tokenAddress = _tokenAddress;
-        _collection.price = _price;
         _collection.isActive = _isActive;
 
         emit CollectionEdited(
@@ -316,7 +309,9 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         require(!_request.isPending, "already request");
 
         Collection memory _collection = _collections[_collectionId];
+        require(_collection.isActive,"active");
         require(_collection.tokenIds.length >= _amount, "nft not enough");
+        require(_collection.price == _price, "price");
 
         _request.amount = _amount;
         _request.price = _price;

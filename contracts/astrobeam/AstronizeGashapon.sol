@@ -59,6 +59,10 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     event MaxPurchaseAmountSet(
         uint256 maxPurchaseAmount
     );
+    event RequestCanceled(
+        address indexed user,
+        uint256 indexed collectionId
+    );
 
     struct Collection {
         address nftAddress;
@@ -266,6 +270,25 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     }
 
     /**
+     * @notice cancel request
+     */
+     function cancelRequest(
+        uint256 _collectionId,
+        address _user,
+        bool refundToken
+    ) external onlyOperator{
+        Request storage _request = _requests[_user][_collectionId];
+        require(_request.isPending,"no pending");
+        _request.isPending = false;
+
+        if (refundToken) {
+            _transferToken(treasuryAddress, _user, _request.tokenAddress, _request.price * _request.amount);
+        }
+
+        emit RequestCanceled(_user, _collectionId);
+    }
+
+    /**
      * @notice set request
      */
     function setRequest(
@@ -311,6 +334,7 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         Collection memory _collection = _collections[_collectionId];
         require(_collection.isActive,"active");
         require(_collection.tokenIds.length >= _amount, "nft not enough");
+        require(_collection.tokenAddress == _tokenAddress, "token address");
         require(_collection.price == _price, "price");
 
         _request.amount = _amount;

@@ -9,3 +9,4 @@ flatten/
 .DS_Store
 .vscode/settings.json
 .env
+scripts/play.ts

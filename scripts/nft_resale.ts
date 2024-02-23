@@ -28,6 +28,6 @@ run script
 cd /Users/jirapongpangbud/Documents/go-workspace/src/astronize-smart-contract/scripts
 nvm use v18.16.0
 npx hardhat run nft_resale.ts --network bitkub
-npx hardhat flatten ../contracts/astronize/v2/nft_resale.sol > ../flatten/nft_resale.sol
+npx hardhat flatten ../contracts/astronize/nft_resale.sol > ../flatten/nft_resale.sol
 
 */

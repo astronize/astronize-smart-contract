@@ -2,7 +2,7 @@
 
 // File contracts/interfaces/IAdmin.sol
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 interface IAdmin {
   function isSuperAdmin(address _addr) external view returns (bool);
@@ -12,7 +12,7 @@ interface IAdmin {
 
 // File contracts/KYCBitkubChainV2.sol
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 contract KYCBitkubChainV2 {
   IAdmin public admin;

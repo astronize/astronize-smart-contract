@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.10;
-
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
@@ -110,7 +109,7 @@ contract AstronizeMarketplace is
     }
 
     constructor(
-        address _callHelper,    //ใช้ของ bitkub เค้าจะ deploy แล้วส่งมาให้
+        address _callHelper,    
         address _kyc,
         uint256 _acceptedKycLevel,
         address _nextTransferRouterKap20, //kap20
@@ -163,7 +162,7 @@ contract AstronizeMarketplace is
         uint256 price,
         address _bitkubnext
     ) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) whenNotPaused {
-        require(price > 0, "price must be greater than 0");
+        require(price > 100000000000000, "price must be greater than 0.0001");
         require(
             isWhitelistNFTToken(nftTokenAddress),
             "nft token address not whitelisted"
@@ -201,6 +200,7 @@ contract AstronizeMarketplace is
         uint256 price
     ) external whenNotPaused{
         require(price > 0, "price must be greater than 0");
+
         require(
             isWhitelistNFTToken(nftTokenAddress),
             "nft token address not whitelisted"

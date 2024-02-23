@@ -1,6 +1,6 @@
 
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 interface IAdminProjectRouter {
     function isSuperAdmin(address _addr, string calldata _project) external view returns (bool);

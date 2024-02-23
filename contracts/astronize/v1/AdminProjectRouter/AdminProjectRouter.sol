@@ -2,7 +2,7 @@
 
 // File contracts/interfaces/IAdminProject.sol
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 interface IAdminProject {
   function rootAdmin() external view returns (address);
@@ -14,7 +14,7 @@ interface IAdminProject {
 
 // File contracts/AdminProjectRouter.sol
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 contract AdminProjectRouter {
   modifier onlyRootAdmin() {

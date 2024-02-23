@@ -1,5 +1,5 @@
 // Sources flattened with hardhat v2.3.0 https://hardhat.org
-pragma solidity 0.8.10;
+pragma solidity 0.8.19;
 
 interface IAdminProject {
     function rootAdmin() external view returns (address);

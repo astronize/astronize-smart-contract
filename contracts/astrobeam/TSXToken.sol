@@ -10,10 +10,11 @@ contract TSXToken is KAP20 {
     string private constant _OWNER_NAME = "OWNER";
     string private constant _MINTER_NAME = "MINTER";
     string private constant _BURNER_NAME = "BURNER";
+    string private constant _PAUSER_NAME = "PAUSER";
 
     modifier onlyRoot() {
         require(address(ownerAccessControlRouter) != address(0) && ownerAccessControlRouter.isRootOwner(msg.sender),
-            "Restricted only super admin or root"
+            "Restricted only root"
         );
         _;
     }
@@ -21,7 +22,7 @@ contract TSXToken is KAP20 {
     modifier onlyOwner() {
         require(address(ownerAccessControlRouter) != address(0) &&
                     ownerAccessControlRouter.isOwner(_OWNER_NAME, msg.sender),
-            "Restricted only super admin or owner"
+            "Restricted only owner"
         );
         _;
     }
@@ -29,7 +30,7 @@ contract TSXToken is KAP20 {
     modifier onlyMinter() {
         require(address(ownerAccessControlRouter) != address(0) &&
                     ownerAccessControlRouter.isOwner(_MINTER_NAME, msg.sender),
-            "Restricted only super admin or admin or minter"
+            "Restricted only minter"
         );
         _;
     }
@@ -37,7 +38,15 @@ contract TSXToken is KAP20 {
     modifier onlyBurner() {
         require(address(ownerAccessControlRouter) != address(0) &&
                     ownerAccessControlRouter.isOwner(_BURNER_NAME, msg.sender),
-            "Restricted only super admin or admin or burner"
+            "Restricted only burner"
+        );
+        _;
+    }
+
+    modifier onlyPauser() {
+        require(address(ownerAccessControlRouter) != address(0) &&
+                    ownerAccessControlRouter.isOwner(_PAUSER_NAME, msg.sender),
+            "Restricted only pauser"
         );
         _;
     }
@@ -74,11 +83,11 @@ contract TSXToken is KAP20 {
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    function pause() external onlyOwner {
+    function pause() external onlyPauser {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyPauser {
         _unpause();
     }
 

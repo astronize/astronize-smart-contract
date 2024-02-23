@@ -14,7 +14,7 @@ contract AstronizeNFTKAP721 is KAP721 {
     string private constant _MINTER_NAME = "MINTER";
     string private constant _BURNER_NAME = "BURNER";
 
-    string public constant _PAUSER_ROLE = "PAUSER_ROLE";
+    string private constant _PAUSER_ROLE = "PAUSER_ROLE";
 
     modifier onlyPause() {
         require(

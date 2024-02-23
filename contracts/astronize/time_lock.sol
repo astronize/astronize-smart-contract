@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import "./math/SafeMath.sol";
 
+
 contract Timelock {
     using SafeMath for uint;
 
@@ -14,8 +15,8 @@ contract Timelock {
     event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
 
     uint public constant GRACE_PERIOD = 14 days;
-    // uint public constant MINIMUM_DELAY = 6 hours;
-    // uint public constant MAXIMUM_DELAY = 30 days;
+    uint public constant MINIMUM_DELAY = 6 hours;
+    uint public constant MAXIMUM_DELAY = 30 days;
 
     address public admin;
     address public pendingAdmin;
@@ -26,8 +27,8 @@ contract Timelock {
 
 
     constructor(address admin_, uint delay_) public {
-        // require(delay_ >= MINIMUM_DELAY, "Timelock::constructor: Delay must exceed minimum delay.");
-        // require(delay_ <= MAXIMUM_DELAY, "Timelock::constructor: Delay must not exceed maximum delay.");
+        require(delay_ >= MINIMUM_DELAY, "Timelock::constructor: Delay must exceed minimum delay.");
+        require(delay_ <= MAXIMUM_DELAY, "Timelock::constructor: Delay must not exceed maximum delay.");
 
         admin = admin_;
         delay = delay_;
@@ -39,8 +40,8 @@ contract Timelock {
 
     function setDelay(uint delay_) public {
         require(msg.sender == address(this), "Timelock::setDelay: Call must come from Timelock.");
-        // require(delay_ >= MINIMUM_DELAY, "Timelock::setDelay: Delay must exceed minimum delay.");
-        // require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
+        require(delay_ >= MINIMUM_DELAY, "Timelock::setDelay: Delay must exceed minimum delay.");
+        require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
         delay = delay_;
 
         emit NewDelay(delay);

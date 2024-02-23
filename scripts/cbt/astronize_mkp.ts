@@ -38,12 +38,14 @@ async function main() {
     * 7. set bitkub whitelist (RestAPI)
   */
 
-  const tokenAddress = "0x270e298eE53948Bb8012076C6e679BD5d3449c57" //ast token
-  const tsxNftAddress = "0xB674192e553b493325Ca243d789804BC0e48AA07" //tsx nft
+  const tokenAddress = "0xaE66074Ff1fFdaDf96fCf3A031EccdB946b85824" //ast token
+  const tsxNftAddress = "0x2b53C04fCD475ceA891ddcEb7bef950A03626ae5" //tsx nft
   const AdminKAP20RouterAddress = "0x8C951bD556816D4d31Ce2246B0A1946e0E8169aF" //tsx nft
   const project = "astronize"
 
+  /* add token whitelist */
   await astronizeMarketplace.setWhitelistCurrencyToken(tokenAddress, true)
+  /* add nft whitelist */
   await astronizeMarketplace.setWhitelistNFTToken(tsxNftAddress, true)
 
   /* allow contract address(addAddress func) */

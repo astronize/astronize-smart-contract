@@ -45,6 +45,7 @@ main().catch((error) => {
 /*
 run script
 cd /Users/jirapongpangbud/Documents/go-workspace/src/astronize-smart-contract/scripts
+nvm use v18.16.0
 npx hardhat run ast_token_kap20.ts --network bitkub
 npx hardhat flatten ../contracts/astronize/ast_kap20.sol > ../flatten/ast_kap20.sol
 

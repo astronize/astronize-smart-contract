@@ -2,15 +2,9 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
-
 import "@openzeppelin/contracts/security/Pausable.sol";
-
-//custom interface
-// import "./kap721/interfaces/IKAP721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./shared/interfaces/IKYC.sol";
@@ -31,7 +25,7 @@ interface IKAP721 {
     AccessControlEnumerable,
     Pausable
 { 
-    
+
     string public constant PROJECT = "astronize";
     address public callHelper;
     uint256 public acceptedKycLevel;
@@ -166,6 +160,8 @@ interface IKAP721 {
         return _whitelistNFTTokens[nftTokenAddress];
     }
 
+  
+
     //for bitkubnext
     function redeemForBitkubNext(
         uint256 tokenId,
@@ -183,7 +179,7 @@ interface IKAP721 {
         );
 
         require(
-            signatures.length > trustedValidatorCount / 2 + 1,
+            signatures.length >= trustedValidatorCount / 2 + 1,
             "require at least half of trusted validators to be validated"
         );
 
@@ -217,12 +213,13 @@ interface IKAP721 {
 
             address signer = ECDSA.recover(digest, signatures[i]);
 
-
             require(trustedValidators[signer], "signer is not trusted validator");
             require(!isRedeemConfirmed[signer][nonce], "signer already confirmed"); 
+
             isRedeemConfirmed[signer][nonce] = true;
             _validators[i] = signer;
         }
+
         //bitkubnext burn
         nft.burn(tokenId);        
 
@@ -246,7 +243,7 @@ interface IKAP721 {
         );
 
         require(
-            signatures.length > trustedValidatorCount / 2 + 1,
+            signatures.length >= trustedValidatorCount / 2 + 1,
             "require at least half of trusted validators to be validated"
         );
 
@@ -314,7 +311,7 @@ interface IKAP721 {
                     );
 
                     require(
-                        data[i].signatures.length > trustedValidatorCount / 2 + 1,
+                        data[i].signatures.length >= trustedValidatorCount / 2 + 1,
                         "require at least half of trusted validators to be validated"
                     );
                     

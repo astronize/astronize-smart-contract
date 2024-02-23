@@ -28,6 +28,23 @@ async function main() {
     );
 
 
+  /* ==== manual step ====
+    * 1. addToken (0xbe152D81077bD3dA5C0243545aD530ac9e617A7a)
+    * 2. 
+    * 3. 
+  */
+
+  /* addToken */
+  const nextNFTTransferRouterAddress = "0xbe152D81077bD3dA5C0243545aD530ac9e617A7a" //manual deploy
+  const project = "astronize"
+
+  const NextNFTTransferRouter = await ethers.getContractFactory("NextNFTTransferRouter");
+  const nextNFTTransferRouter = NextNFTTransferRouter.attach(
+    nextNFTTransferRouterAddress 
+  );
+  await nextNFTTransferRouter.addAddress(project, astronizeCouponNFTKAP721.address)
+  await nextNFTTransferRouter.addToken(project, astronizeCouponNFTKAP721.address)
+
   console.log(`deployed to ${astronizeCouponNFTKAP721.address}`);
 }
 
@@ -38,13 +55,6 @@ main().catch((error) => {
   process.exitCode = 1;
 });
 
-
-
-  /* ==== manual step ====
-    * 1. addToken (0xbe152D81077bD3dA5C0243545aD530ac9e617A7a)
-    * 2. 
-    * 3. 
-  */
 
 
 

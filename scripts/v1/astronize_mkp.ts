@@ -10,7 +10,8 @@ async function main() {
   const nextNFTTransferRouter = "0xbe152D81077bD3dA5C0243545aD530ac9e617A7a" //manual deploy
   
   const treasuryAddress = "0xf4A9AaaBc92501FA818190552aE3c7E4a3F306f5"
-  const fee = 500
+  const fee = 500 //2deci
+  const minimumSalePrice = 100000000000000 //0.001, 18deci
 
   const AstronizeMarketplace = await ethers.getContractFactory("AstronizeMarketplace"); // Lock ชื่อ contract
   const astronizeMarketplace = await AstronizeMarketplace.deploy(
@@ -20,7 +21,8 @@ async function main() {
     nextTransferRouter, 
     nextNFTTransferRouter, 
     treasuryAddress,
-    fee
+    fee,
+    minimumSalePrice
     );
 
 

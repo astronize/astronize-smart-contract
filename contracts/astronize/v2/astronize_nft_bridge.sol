@@ -44,8 +44,8 @@ interface IKAP721 {
     using SafeERC20 for IERC20;
 
     event TreasuryAddressChanged(address indexed sender,address oldTreasuryAddress, address newTreasuryAddress);
-    event Mint(address indexed sender, uint256 tokenId, address to, uint256 indexed nonce, address nftAddress);
-    event Redeem(address indexed sender, uint256 indexed nonce, uint256 tokenId, address nftAddress);
+    event Mint(address indexed sender, uint256 tokenId, address to, uint256 indexed nonce, address nftAddress, address[] validators);
+    event Redeem(address indexed sender, uint256 indexed nonce, uint256 tokenId, address nftAddress, address[] validators);
     event WhitelistNFTTokenUpdated(address indexed sender,address indexed nftTokenAddress, bool indexed isWhitelist);
 
     event ASTTokenAddresChanged(address indexed sender, address indexed oldASTTokenAddress,  address indexed newASTTokenAddress);
@@ -172,10 +172,21 @@ interface IKAP721 {
         uint256 nonce,
         uint256 deadline,
         address nftAddress,
-        bytes calldata signatures,
+        bytes[] calldata signatures,
         address _bitkubnext
         ) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) {
         require(deadline > block.timestamp, "deadline");
+
+        require(
+            trustedValidatorCount >= 3,
+            "require at least 3 trusted validators"
+        );
+
+        require(
+            signatures.length > trustedValidatorCount / 2 + 1,
+            "require at least half of trusted validators to be validated"
+        );
+
         require(nftAddress != address(0), "token address cannot be zero");
 
         require(
@@ -187,32 +198,35 @@ interface IKAP721 {
         
         require( nft.ownerOf(tokenId) == _bitkubnext, "owner is not match");
 
+        address[] memory _validators = new address[](signatures.length);
         //verify
-        bytes32 digest = _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "redeem(uint256 tokenId,uint256 nonce,uint256 deadline,address nftAddress)"
-                        ),
-                        tokenId,
-                        nonce,
-                        deadline,
-                        nftAddress
+        for (uint256 i = 0; i < signatures.length; i++) {
+            bytes32 digest = _hashTypedDataV4(
+                    keccak256(
+                        abi.encode(
+                            keccak256(
+                                "redeem(uint256 tokenId,uint256 nonce,uint256 deadline,address nftAddress)"
+                            ),
+                            tokenId,
+                            nonce,
+                            deadline,
+                            nftAddress
+                        )
                     )
-                )
-            );
+                );
 
-        address signer = ECDSA.recover(digest, signatures);
+            address signer = ECDSA.recover(digest, signatures[i]);
 
 
-        require(trustedValidators[signer], "signer is not trusted validator");
-        require(!isRedeemConfirmed[signer][nonce], "signer already confirmed"); 
-        isRedeemConfirmed[signer][nonce] = true;
-
+            require(trustedValidators[signer], "signer is not trusted validator");
+            require(!isRedeemConfirmed[signer][nonce], "signer already confirmed"); 
+            isRedeemConfirmed[signer][nonce] = true;
+            _validators[i] = signer;
+        }
         //bitkubnext burn
         nft.burn(tokenId);        
 
-        emit Redeem(_bitkubnext, nonce, tokenId, nftAddress);
+        emit Redeem(_bitkubnext, nonce, tokenId, nftAddress, _validators);
 
     }
 
@@ -221,10 +235,21 @@ interface IKAP721 {
         uint256 nonce,
         uint256 deadline,
         address nftAddress,
-        bytes calldata signatures
+        bytes[] calldata signatures
         ) external whenNotPaused {
         require(deadline > block.timestamp, "deadline");
         require(nftAddress != address(0), "token address cannot be zero");
+
+        require(
+            trustedValidatorCount >= 3,
+            "require at least 3 trusted validators"
+        );
+
+        require(
+            signatures.length > trustedValidatorCount / 2 + 1,
+            "require at least half of trusted validators to be validated"
+        );
+
         require(
                 isWhitelistNFTToken(nftAddress),
                 "nft token address not whitelisted"
@@ -235,35 +260,38 @@ interface IKAP721 {
         require( nft.getApproved(tokenId) == address(this), "nft address not approved");
         require( nft.ownerOf(tokenId) == _msgSender(), "owner is not match");
 
+        address[] memory _validators = new address[](signatures.length);
         //verify
-        bytes32 digest = _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "redeem(uint256 tokenId,uint256 nonce,uint256 deadline,address nftAddress)"
-                        ),
-                        tokenId,
-                        nonce,
-                        deadline,
-                        nftAddress
+        for (uint256 i = 0; i < signatures.length; i++) {
+            bytes32 digest = _hashTypedDataV4(
+                    keccak256(
+                        abi.encode(
+                            keccak256(
+                                "redeem(uint256 tokenId,uint256 nonce,uint256 deadline,address nftAddress)"
+                            ),
+                            tokenId,
+                            nonce,
+                            deadline,
+                            nftAddress
+                        )
                     )
-                )
-            );
+                );
 
-        address signer = ECDSA.recover(digest, signatures);
+            address signer = ECDSA.recover(digest, signatures[i]);
 
 
-        require(trustedValidators[signer], "signer is not trusted validator");
-        require(!isRedeemConfirmed[signer][nonce], "signer already confirmed"); 
-        isRedeemConfirmed[signer][nonce] = true;
+            require(trustedValidators[signer], "signer is not trusted validator");
+            require(!isRedeemConfirmed[signer][nonce], "signer already confirmed"); 
+            isRedeemConfirmed[signer][nonce] = true;
+            _validators[i] = signer;
+        }
 
         //redeem nft(burn)
         nft.burn(tokenId);        
 
-        emit Redeem(_msgSender(), nonce, tokenId, nftAddress);
+        emit Redeem(_msgSender(), nonce, tokenId, nftAddress, _validators);
 
     }
-
 
     struct NFTMintWithSignParam {
         address to; 
@@ -272,14 +300,24 @@ interface IKAP721 {
         uint256 deadline;
         address nftAddress;
         string tokenUri;
-        bytes signatures;
+        bytes[] signatures;
     }   
-
 
     function mint(NFTMintWithSignParam[] calldata data) external whenNotPaused {
                 for (uint i=0; i<data.length; i++) {
 
                     require(data[i].deadline > block.timestamp, "deadline");
+
+                     require(
+                        trustedValidatorCount >= 3,
+                        "require at least 3 trusted validators"
+                    );
+
+                    require(
+                        data[i].signatures.length > trustedValidatorCount / 2 + 1,
+                        "require at least half of trusted validators to be validated"
+                    );
+                    
                     require(data[i].nftAddress != address(0), "token address cannot be zero");
                     require(
                             isWhitelistNFTToken(data[i].nftAddress),
@@ -288,29 +326,34 @@ interface IKAP721 {
 
                     IKAP721 nft = IKAP721(data[i].nftAddress);
 
+
+                    address[] memory _validators = new address[](data[i].signatures.length);
                     //verify
-                    bytes32 digest = _hashTypedDataV4(
-                            keccak256(
-                                abi.encode(
-                                    keccak256(
-                                        "mint(address to,uint256 tokenId,uint256 nonce,uint256 deadline,string tokenUri,address nftAddress)"
-                                    ),
-                                    data[i].to,
-                                    data[i].tokenId,
-                                    data[i].nonce,
-                                    data[i].deadline,
-                                    keccak256(bytes(data[i].tokenUri)),
-                                    data[i].nftAddress
+                    for (uint256 y = 0; y < data[i].signatures.length; y++) {
+                        bytes32 digest = _hashTypedDataV4(
+                                keccak256(
+                                    abi.encode(
+                                        keccak256(
+                                            "mint(address to,uint256 tokenId,uint256 nonce,uint256 deadline,string tokenUri,address nftAddress)"
+                                        ),
+                                        data[i].to,
+                                        data[i].tokenId,
+                                        data[i].nonce,
+                                        data[i].deadline,
+                                        keccak256(bytes(data[i].tokenUri)),
+                                        data[i].nftAddress
+                                    )
                                 )
-                            )
-                        );
+                            );
 
 
-                    address signer = ECDSA.recover(digest, data[i].signatures);
+                        address signer = ECDSA.recover(digest, data[i].signatures[y]);
 
-                    require(trustedValidators[signer], "signer is not trusted validator");
-                    require(!isMintConfirmed[signer][data[i].nonce], "signer already confirmed"); 
-                    isMintConfirmed[signer][data[i].nonce] = true;
+                        require(trustedValidators[signer], "signer is not trusted validator");
+                        require(!isMintConfirmed[signer][data[i].nonce], "signer already confirmed"); 
+                        isMintConfirmed[signer][data[i].nonce] = true;
+                        _validators[y] = signer;
+                    }
 
                     // server mint (no fee)
                     // fee cost (ignore if mint fee = 0)
@@ -322,7 +365,7 @@ interface IKAP721 {
                     nft.mint(data[i].to, data[i].tokenId);
                     nft.setTokenURI(data[i].tokenId, data[i].tokenUri);
                 
-                    emit Mint(_msgSender(), data[i].tokenId, data[i].to, data[i].nonce, data[i].nftAddress);
+                    emit Mint(_msgSender(), data[i].tokenId, data[i].to, data[i].nonce, data[i].nftAddress, _validators);
                 }
 
     }

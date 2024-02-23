@@ -35,6 +35,7 @@ async function main() {
     * 4. add token whitelist
     * 5. add nft whitelist
     * 6. resale grantRole MKP_ROLE(0xc72925e6daa2c313e7b8aae82a9e85bf595bfe554e8fe978954087f638a5a249) (0x898D122268343e2A29d33E03Ac46e7796ce1537c)
+    * 7. set bitkub whitelist (RestAPI)
   */
 
   const tokenAddress = "0x270e298eE53948Bb8012076C6e679BD5d3449c57" //ast token

@@ -19,7 +19,8 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     event Purchase(
         address indexed sender,
         uint256 indexed collectionId,
-        address indexed nftAddress,
+        bytes32 indexed hashedSeed,
+        address nftAddress,
         uint256[] tokenIds,
         uint256 remainingAmount,
         address tokenAddress,
@@ -48,17 +49,29 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     );
     event RequestSet(
         address indexed sender,
-        uint256 collectionId,
+        uint256 indexed colectionId,
+        bytes32 indexed hashedSeed,
         address tokenAddress,
         uint256 price,
         uint256 amount,
         uint256 timestamp
+    );
+    event MaxPurchaseAmountSet(
+        uint256 maxPurchaseAmount
+    );
+    event RevealDurationBlocksSet(
+        uint256 revealDurationBlocks 
+    );
+    event RequestCanceled(
+        address indexed user,
+        uint256 indexed collectionId
     );
 
     struct Collection {
         address nftAddress;
         address tokenAddress;
         uint256 price;
+        bool isActive;
         uint256[] tokenIds;
     }
     uint256 public idCounter;
@@ -70,9 +83,14 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         address tokenAddress;
         uint256 price;
         uint256 amount;
+        uint256 revealBlock;
+        bool isPending;
+        bytes32 hashedSeed;
     }
     // user address => collection id => request
     mapping(address => mapping(uint256 => Request)) internal _requests;
+    uint256 public maxPurchaseAmount;
+    uint256 public revealDurationBlocks;
 
     constructor(
         address _adminProjectRouter,
@@ -82,7 +100,9 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         address _ownerAccessControlRouter,
         address _nextTransferRouter,
         address _treasuryAddress,
-        address _callHelper
+        address _callHelper,
+        uint256 _maxPurchaseAmount,
+        uint256 _revealDurationBlocks
     ) {
         // Initialize BitkubChain
         PROJECT = "astronize";
@@ -97,6 +117,9 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
 
         treasuryAddress = _treasuryAddress;
         callHelper = _callHelper;
+
+        maxPurchaseAmount = _maxPurchaseAmount;
+        revealDurationBlocks = _revealDurationBlocks;
     }
 
     /**
@@ -104,7 +127,7 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
      */
     function collectionOf(
         uint256 _collectionId
-    ) public view returns (Collection memory) {
+    ) external view returns (Collection memory) {
         return _collections[_collectionId];
     }
 
@@ -114,7 +137,7 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     function requestOf(
         address _user,
         uint256 _collectionId
-    ) public view returns (Request memory) {
+    ) external view returns (Request memory) {
         return _requests[_user][_collectionId];
     }
 
@@ -128,17 +151,35 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     }
 
     /**
+     * @notice set max purchase amount
+    */
+    function setMaxPurchase(uint256 _maxPurchaseAmount) external onlyOwner {
+        maxPurchaseAmount = _maxPurchaseAmount;
+        emit MaxPurchaseAmountSet(_maxPurchaseAmount);
+    }
+
+     /**
+     * @notice set reveal duration blocks 
+    */
+    function setRevealDurationBlocks(uint256 _revealDurationBlocks) external onlyOwner {
+        revealDurationBlocks = _revealDurationBlocks;
+        emit RevealDurationBlocksSet(_revealDurationBlocks);
+    } 
+
+    /**
      * @notice create collection for gashapon
      */
     function createCollection(
         address _nftAddress,
         address _tokenAddress,
-        uint256 _price
+        uint256 _price,
+        bool _isActive
     ) external onlyModerator {
         Collection memory _collection = Collection({
             nftAddress: _nftAddress,
             tokenAddress: _tokenAddress,
             price: _price,
+            isActive: _isActive,
             tokenIds: new uint256[](0)
         });
 
@@ -159,7 +200,8 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     function editCollection(
         uint256 _collectionId,
         address _tokenAddress,
-        uint256 _price
+        uint256 _price,
+        bool _isActive
     ) external onlyModerator {
         require(_tokenAddress != address(0), "treasury address");
         require(_price != 0, "treasury address");
@@ -170,6 +212,7 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         // set collection
         _collection.tokenAddress = _tokenAddress;
         _collection.price = _price;
+        _collection.isActive = _isActive;
 
         emit CollectionEdited(
             msg.sender,
@@ -213,22 +256,18 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
      */
     function removeNfts(
         uint256 _collectionId,
-        uint256 _fromIndex,
-        uint256 _toIndex
+        uint256 _startIndex,
+        uint256 _amount
     ) external onlyModerator {
-        require(_fromIndex <= _toIndex, "index");
-
         // get collection
         Collection storage _collection = _collections[_collectionId];
 
         // remove NFTs
-        uint256 _amount = _toIndex - _fromIndex + 1;
         uint256[] memory _tokenIds = new uint256[](_amount);
         for (uint256 i = 0; i < _amount; i++) {
-            // pick
-            uint256 _pickIndex = _fromIndex;
-            uint256 _tokenId = _collection.tokenIds[_pickIndex];
-            _removeItemByIndex(_collection.tokenIds, _pickIndex);
+            // remove
+            uint256 _tokenId = _collection.tokenIds[_startIndex];
+            _removeItemByIndex(_collection.tokenIds, _startIndex);
 
             // transfer
             IKAP721(_collection.nftAddress).safeTransferFrom(
@@ -249,6 +288,25 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         );
     }
 
+     /**
+     * @notice cancel request
+     */
+     function cancelRequest(
+        uint256 _collectionId,
+        address _user,
+        bool refundToken
+    ) external onlyOperator{
+        Request storage _request = _requests[_user][_collectionId];
+        require(_request.isPending,"no pending");
+        _request.isPending = false;
+
+        if (refundToken) {
+            _transferToken(treasuryAddress, _user, _request.tokenAddress, _request.price * _request.amount);
+        }
+
+        emit RequestCanceled(_user, _collectionId);
+    }
+
     /**
      * @notice set request
      */
@@ -256,9 +314,10 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         uint256 _collectionId,
         address _tokenAddress,
         uint256 _price,
-        uint256 _amount
+        uint256 _amount,
+        bytes32 _hashedSeed
     ) external {
-        _setRequest(_collectionId, _tokenAddress, _price, _amount, msg.sender);
+        _setRequest(_collectionId, _tokenAddress, _price, _amount, _hashedSeed, msg.sender);
     }
 
     /**
@@ -269,9 +328,10 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         address _tokenAddress,
         uint256 _price,
         uint256 _amount,
+        bytes32 _hashedSeed,
         address _bitkubNext
     ) external onlyCallHelper onlyBitkubNextUser(_bitkubNext) {
-        _setRequest(_collectionId, _tokenAddress, _price, _amount, _bitkubNext);
+        _setRequest(_collectionId, _tokenAddress, _price, _amount, _hashedSeed, _bitkubNext);
     }
 
     /**
@@ -282,17 +342,31 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
         address _tokenAddress,
         uint256 _price,
         uint256 _amount,
+        bytes32 _hashedSeed,
         address _user
-    ) internal {
+    ) internal whenNotPaused{
+        require(_amount<=maxPurchaseAmount,"max purchase amount");
+
         Request storage _request = _requests[_user][_collectionId];
+        require(!_request.isPending, "already request");
+
+        Collection memory _collection = _collections[_collectionId];
+        require(_collection.tokenIds.length >= _amount, "nft not enough");
 
         _request.amount = _amount;
         _request.price = _price;
         _request.tokenAddress = _tokenAddress;
+        _request.revealBlock = block.number + revealDurationBlocks;
+        _request.hashedSeed = _hashedSeed;
+        _request.isPending = true;
+
+        // transfer token
+        _transferToken(_user, treasuryAddress, _collection.tokenAddress, _collection.price * _amount);
 
         emit RequestSet(
             _user,
             _collectionId,
+            _hashedSeed,
             _tokenAddress,
             _price,
             _amount,
@@ -314,11 +388,6 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
 
         // check collection status
         Collection storage _collection = _collections[_collectionId];
-        require(_collection.tokenIds.length >= _seeds.length, "amount");
-        require(
-            _collection.tokenIds.length >= _seeds.length,
-            "remaining amount"
-        );
 
         // check request
         Request storage _request = _requests[_user][_collectionId];
@@ -327,24 +396,33 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
             _request.tokenAddress == _collection.tokenAddress,
             "token address"
         );
-        require(_request.amount >= _seeds.length, "amount");
-        _request.amount -= _seeds.length;
+        require(_request.revealBlock >= block.number, "reveal");
+        require(_request.isPending, "pending");
+        require(_request.hashedSeed == keccak256(abi.encodePacked(_seeds)), "hash");
+        require(_collection.tokenIds.length >= _request.amount, "nft not enough");
+
+        uint256 returnAmount;
+        if (_collection.tokenIds.length < _request.amount){
+            returnAmount = _request.amount - _collection.tokenIds.length;
+            _request.amount = _collection.tokenIds.length;
+        }
 
         // random NFTs and send to user
-        uint256[] memory _tokenIds = new uint256[](_seeds.length);
-        for (uint256 i = 0; i < _seeds.length; i++) {
+        uint256[] memory _tokenIds = new uint256[](_request.amount);
+        for (uint256 i = 0; i < _request.amount; i++) {
             // random pick
             nonce++;
             uint256 _pickIndex = _random(
                 _collection.tokenIds.length,
                 nonce,
-                _seeds[i]
+                _seeds[i],
+                _request.revealBlock
             );
             uint256 _tokenId = _collection.tokenIds[_pickIndex];
             _removeItemByIndex(_collection.tokenIds, _pickIndex);
 
             // transfer
-            IKAP721(_collection.nftAddress).safeTransferFrom(
+            IKAP721(_collection.nftAddress).transferFrom(
                 address(this),
                 _user,
                 _tokenId
@@ -353,12 +431,17 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
             _tokenIds[i] = _tokenId;
         }
 
-        // transfer token
-        _transferTokens(_collectionId, _user, _seeds.length);
+        //refund remain token to user
+        if (returnAmount > 0) {
+            _transferToken(treasuryAddress, _user, _collection.tokenAddress, _collection.price * returnAmount);
+        }
+
+        _request.isPending = false;
 
         emit Purchase(
             _user,
             _collectionId,
+            _request.hashedSeed,
             _collection.nftAddress,
             _tokenIds,
             _collection.tokenIds.length,
@@ -366,18 +449,6 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
             _collection.price,
             block.timestamp
         );
-    }
-
-    /**
-     * @notice transfer tokens
-     */
-    function _transferTokens(
-        uint256 _collectionId,
-        address _user,
-        uint256 _amount
-    ) internal {
-        Collection storage _collection = _collections[_collectionId];
-        _transferToken(_user, treasuryAddress, _collection.tokenAddress, _collection.price * _amount);
     }
 
     /**
@@ -395,21 +466,19 @@ contract AstronizeGashapon is AstronizeBitkubBase, KAP721Holder {
     function _random(
         uint256 _length,
         uint256 _nonce,
-        bytes32 _randSeed
+        bytes32 _randSeed,
+        uint256 revealBlock
     ) internal view returns (uint256) {
         return
             uint256(
-                keccak256(
-                    abi.encodePacked(
-                        blockhash(block.number - 1),
-                        block.timestamp,
-                        msg.sender,
-                        block.coinbase,
-                        _nonce,
-                        _randSeed
-                    )
+            keccak256(
+                abi.encodePacked(
+                    blockhash(revealBlock),
+                    _nonce,
+                    _randSeed
                 )
-            ) % _length;
+            )
+        ) % _length;
     }
 
     /**

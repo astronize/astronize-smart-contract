@@ -60,6 +60,13 @@ contract AstronizeMarketplace is
     event TreasuryAddressChanged(address indexed sender,address oldTreasuryAddress, address newTreasuryAddress);
     event WhitelistNFTTokenUpdated(address indexed sender,address indexed nftTokenAddress, bool indexed isWhitelist);
     event WhitelistCurrencyTokenUpdated(address indexed sender,address indexed currencyTokenAddress, bool indexed isWhitelist);
+  
+    event AcceptedKycLevelChanged(address indexed sender, uint256 indexed oldAcceptedKycLevel, uint256 indexed newAcceptedKycLevel);
+    event KycChanged(address indexed sender, address indexed oldKyc, address indexed newKyc);
+    event CallHelperChanged(address indexed sender, address indexed oldCallHelper, address indexed newCallHelper);
+    event NextTransferRouterChanged(address indexed sender, address indexed oldNextTransferRouter, address indexed newNextTransferRouter);
+    event NextNFTTransferRouterChanged(address indexed sender, address indexed oldNextNFTTransferRouter, address indexed newNextNFTTransferRouter);
+    
 
     struct NFTSellInfo {
         address nftTokenAddress; //nft address
@@ -134,24 +141,29 @@ contract AstronizeMarketplace is
         setFee(_fee);
         setMinimumSalePrice(_minimumSalePrice);
     }
-
+    
     function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit AcceptedKycLevelChanged(msg.sender, acceptedKycLevel, _acceptedKycLevel);
         acceptedKycLevel = _acceptedKycLevel;
     }
 
     function setKyc(address _kyc) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit KycChanged(_msgSender(), address(kyc), _kyc);
         kyc = IKYC(_kyc);
     }
     
-    function setCallHelper(address _callHelper) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setCallHelper(address _callHelper) external onlyRole(DEFAULT_ADMIN_ROLE) {       
+        emit CallHelperChanged(_msgSender(), callHelper, _callHelper);
         callHelper = _callHelper;
     }
     
     function setNextTransferRouter(address _nextTransferRouterKap20) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit NextTransferRouterChanged(_msgSender(), address(nextTransferRouterKap20), _nextTransferRouterKap20);
         nextTransferRouterKap20 = INextTransferRouter(_nextTransferRouterKap20);
     }
     
     function setNextNFTTransferRouter(address _nextNFTTransferRouterKap721) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        emit NextNFTTransferRouterChanged(_msgSender(), address(_nextNFTTransferRouterKap721), _nextNFTTransferRouterKap721);
         nextNFTTransferRouterKap721 = INextNFTTransferRouter(_nextNFTTransferRouterKap721);
     }
 

@@ -54,11 +54,8 @@ contract AstronizeMarketplace is
         uint256 timestamp
     );
 
-    event FeeChanged(
-        address indexed sender, 
-        uint256 oldFee, 
-        uint256 newFee
-    );
+    event FeeChanged(address indexed sender, uint256 oldFee, uint256 newFee);
+    event MinimumSalePriceChanged(address indexed sender, uint256 oldMinimumSalePrice, uint256 newMinimumSalePrice);
     
     event TreasuryAddressChanged(address indexed sender,address oldTreasuryAddress, address newTreasuryAddress);
     event WhitelistNFTTokenUpdated(address indexed sender,address indexed nftTokenAddress, bool indexed isWhitelist);
@@ -88,6 +85,7 @@ contract AstronizeMarketplace is
     address public treasuryAddress;
 
     uint256 public fee; //300=3% 2deci
+    uint256 public minimumSalePrice; 
 
 
     string public constant PROJECT = "astronize";
@@ -116,7 +114,8 @@ contract AstronizeMarketplace is
         address _nextNFTTransferRouterKap721, //kap721
 
         address _treasuryAddress,
-        uint256 _fee
+        uint256 _fee,
+        uint256 _minimumSalePrice
 
     ) {
         
@@ -133,6 +132,7 @@ contract AstronizeMarketplace is
 
         setTreasuryAddress(_treasuryAddress);
         setFee(_fee);
+        setMinimumSalePrice(_minimumSalePrice);
     }
 
     function setAcceptedKycLevel(uint256 _acceptedKycLevel) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -155,6 +155,22 @@ contract AstronizeMarketplace is
         nextNFTTransferRouterKap721 = INextNFTTransferRouter(_nextNFTTransferRouterKap721);
     }
 
+    function setFee(uint256 _newFee) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_newFee <= 10000, "fee must be less than 10000");
+
+        emit FeeChanged(msg.sender,fee,_newFee);
+
+        fee = _newFee;
+    }
+
+    function setMinimumSalePrice(uint256 _minimumSalePrice) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_minimumSalePrice > 0, "price must be greater than 0");
+
+        emit MinimumSalePriceChanged(msg.sender,minimumSalePrice,_minimumSalePrice);
+
+        minimumSalePrice = _minimumSalePrice;
+    }
+
     function sellNFT(
         address nftTokenAddress,
         uint256 tokenId,
@@ -162,16 +178,10 @@ contract AstronizeMarketplace is
         uint256 price,
         address _bitkubnext
     ) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) whenNotPaused {
-        require(price > 100000000000000, "price must be greater than 0.0001");
-        require(
-            isWhitelistNFTToken(nftTokenAddress),
-            "nft token address not whitelisted"
-        );
-        
-        require(
-            isWhitelistCurrencyToken(currencyTokenAddress),
-            "currency token address not whitelisted"
-        );
+
+        require(price > minimumSalePrice, "price must be greater than the minimum sale price");
+        require(isWhitelistNFTToken(nftTokenAddress),"nft token address not whitelisted");
+        require(isWhitelistCurrencyToken(currencyTokenAddress),"currency token address not whitelisted");
 
         //bitkubnext transfer
         nextNFTTransferRouterKap721.transferFromKAP721(PROJECT, address(nftTokenAddress), _bitkubnext, address(this), tokenId);
@@ -199,17 +209,10 @@ contract AstronizeMarketplace is
         address currencyTokenAddress,
         uint256 price
     ) external whenNotPaused{
-        require(price > 0, "price must be greater than 0");
 
-        require(
-            isWhitelistNFTToken(nftTokenAddress),
-            "nft token address not whitelisted"
-        );
-        
-        require(
-            isWhitelistCurrencyToken(currencyTokenAddress),
-            "currency token address not whitelisted"
-        );
+        require(price > minimumSalePrice, "price must be greater than the minimum sale price");
+        require(isWhitelistNFTToken(nftTokenAddress),"nft token address not whitelisted");
+        require(isWhitelistCurrencyToken(currencyTokenAddress),"currency token address not whitelisted");
 
         IERC721(nftTokenAddress).safeTransferFrom(
             msg.sender,
@@ -337,14 +340,6 @@ contract AstronizeMarketplace is
             block.timestamp
         );
 
-    }
-
-    function setFee(uint256 _newFee) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_newFee <= 10000, "fee must be less than 10000");
-
-        emit FeeChanged(msg.sender,fee,_newFee);
-
-        fee = _newFee;
     }
     
    function setTreasuryAddress(address _newTreasuryAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {

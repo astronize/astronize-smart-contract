@@ -2,8 +2,12 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-abi-exporter";
 
-const privateKey1 = "0xf52acb50a1e1ec0b3bc867d6621ce2ece52f0ab401cc6f94fdd8f92bb035b50e"
-const privateKey2 = "763a5522e7f42ae48984df3c70adab250be4a5181cac03a311dc698c7f638cf3"
+import dotenv from 'dotenv';
+dotenv.config({ path: __dirname+'/.env' });
+
+const privateKey1 = process.env.privateKey1; //0xf4A9AaaBc92501FA818190552aE3c7E4a3F306f5
+const privateKey2 = process.env.privateKey2; //0xB88D7e756428c886Ce4aD29E7ecAED17A994EDc2
+const privateKey3 = process.env.privateKey3; //0x4B7c4cc1818E110582940983e261E91d9a463b8D
 
 const config: HardhatUserConfig = {
   solidity: {

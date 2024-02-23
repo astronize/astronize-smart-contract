@@ -135,23 +135,23 @@ contract AstronizeMarketplace is
         setMinimumSalePrice(_minimumSalePrice);
     }
 
-    function setAcceptedKycLevel(uint256 _acceptedKycLevel) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setAcceptedKycLevel(uint256 _acceptedKycLevel) external onlyRole(DEFAULT_ADMIN_ROLE) {
         acceptedKycLevel = _acceptedKycLevel;
     }
 
-    function setKyc(address _kyc) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setKyc(address _kyc) external onlyRole(DEFAULT_ADMIN_ROLE) {
         kyc = IKYC(_kyc);
     }
     
-    function setCallHelper(address _callHelper) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setCallHelper(address _callHelper) external onlyRole(DEFAULT_ADMIN_ROLE) {
         callHelper = _callHelper;
     }
     
-    function setNextTransferRouter(address _nextTransferRouterKap20) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setNextTransferRouter(address _nextTransferRouterKap20) external onlyRole(DEFAULT_ADMIN_ROLE) {
         nextTransferRouterKap20 = INextTransferRouter(_nextTransferRouterKap20);
     }
     
-    function setNextNFTTransferRouter(address _nextNFTTransferRouterKap721) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setNextNFTTransferRouter(address _nextNFTTransferRouterKap721) external onlyRole(DEFAULT_ADMIN_ROLE) {
         nextNFTTransferRouterKap721 = INextNFTTransferRouter(_nextNFTTransferRouterKap721);
     }
 
@@ -407,7 +407,7 @@ contract AstronizeMarketplace is
         return _nftInMarketplace[index];
     }
 
-     function itemInMarketplace() public view returns (NFTSellInfo[] memory) {
+     function itemInMarketplace() external view returns (NFTSellInfo[] memory) {
         return _nftInMarketplace;
     }
 
@@ -423,7 +423,7 @@ contract AstronizeMarketplace is
         return _indexOfTokenIds[nftTokenAddress][tokenId];
     }
 
-    function itemCount() public view returns (uint256) {
+    function itemCount() external view returns (uint256) {
         return _nftInMarketplace.length;
     }
 
@@ -448,7 +448,7 @@ contract AstronizeMarketplace is
         address,
         uint256,
         bytes memory
-    ) public virtual override returns  (bytes4) {
+    ) external virtual override returns  (bytes4) {
         return this.onKAP721Received.selector;
     }
 }

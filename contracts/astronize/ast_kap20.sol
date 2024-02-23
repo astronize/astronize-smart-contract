@@ -19,11 +19,22 @@ contract ASTTokenKAP20 is KAP20 {
 
     IOwnerAccessControlRouter public ownerAccessControlRouter;
 
+    //role init
     string private constant _MINTER_NAME = "MINTER";
     string private constant _BURNER_NAME = "BURNER";
 
+    string public constant _PAUSER_ROLE = "PAUSER_ROLE";
 
     event OwnerAccessControlRouterSet(address indexed operator, address indexed oldAddress, address indexed newAddress);
+
+    modifier onlyPause() {
+        require(
+           (address(ownerAccessControlRouter) != address(0) &&
+                    ownerAccessControlRouter.isOwner(_PAUSER_ROLE, msg.sender)),
+            "Restricted only pause role"
+        );
+        _;
+    }
 
     modifier onlyMinter() {
         require(
@@ -76,6 +87,7 @@ contract ASTTokenKAP20 is KAP20 {
         )
     {
         ownerAccessControlRouter = IOwnerAccessControlRouter(_ownerAccessControlRouter);
+        
     }
 
     function setOwnerAccessControlRouter(address _ownerAccessControlRouter) external onlyOwner {
@@ -83,11 +95,11 @@ contract ASTTokenKAP20 is KAP20 {
         ownerAccessControlRouter = IOwnerAccessControlRouter(_ownerAccessControlRouter);
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyPause {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyPause {
         _unpause();
     }
 

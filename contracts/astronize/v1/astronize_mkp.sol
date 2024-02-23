@@ -162,7 +162,7 @@ contract AstronizeMarketplace is
         address currencyTokenAddress,
         uint256 price,
         address _bitkubnext
-    ) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) {
+    ) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) whenNotPaused {
         require(price > 0, "price must be greater than 0");
         require(
             isWhitelistNFTToken(nftTokenAddress),
@@ -268,7 +268,7 @@ contract AstronizeMarketplace is
     }
 
 
-    function buyNFT(address nftTokenAddress, uint256 tokenId, address currencyTokenAddress, uint256 price, address _bitkubnext) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) {
+    function buyNFT(address nftTokenAddress, uint256 tokenId, address currencyTokenAddress, uint256 price, address _bitkubnext) external onlyCallHelper onlyBitkubNextUser(_bitkubnext) whenNotPaused{
         NFTSellInfo memory item = itemByTokenId(nftTokenAddress, tokenId);
 
         require(item.price == price, "price must match");

@@ -216,7 +216,9 @@ interface IKAP721 {
             );
 
         IKAP721 nft = IKAP721(nftAddress);
+        
         require( nft.getApproved(tokenId) == address(this), "nft address not approved");
+        require( nft.ownerOf(tokenId) == _msgSender(), "owner is not match");
 
         //verify
         bytes32 digest = _hashTypedDataV4(

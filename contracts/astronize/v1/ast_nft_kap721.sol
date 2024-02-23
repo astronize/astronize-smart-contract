@@ -5,7 +5,10 @@ import "./nft/kap721/resource/token/KAP721.sol";
 import "./nft/kap721/resource/interfaces/IOwnerAccessControlRouter.sol";
 
 contract AstronizeCouponNFTKAP721 is KAP721 {
+
     event OwnerAccessControlRouterSet(address indexed operator, address indexed oldAddress, address indexed newAddress);
+    event TokenURISet(address indexed sender, uint256 indexed tokenId, string indexed tokenURI);
+    event BaseURISet(address indexed sender, string indexed baseURI);
   
     string private constant _OWNER_NAME = "OWNER";
     string private constant _MINTER_NAME = "MINTER";
@@ -77,10 +80,12 @@ contract AstronizeCouponNFTKAP721 is KAP721 {
     }
 
     function setTokenURI(uint256 _tokenId, string calldata _tokenURI) external onlyOwner {
+        emit TokenURISet(msg.sender, _tokenId, _tokenURI);
         _setTokenURI(_tokenId, _tokenURI);
     }
 
     function setBaseURI(string calldata _baseURI) external onlyOwner {
+        emit BaseURISet(msg.sender, _baseURI);
         _setBaseURI(_baseURI);
     }
 

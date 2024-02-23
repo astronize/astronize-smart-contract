@@ -7,3 +7,4 @@ scripts/o.sol
 o.sol
 flatten/
 .DS_Store
+.vscode/settings.json

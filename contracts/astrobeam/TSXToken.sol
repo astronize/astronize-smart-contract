@@ -52,6 +52,7 @@ contract TSXToken is KAP20 {
     }
 
     IOwnerAccessControlRouter public ownerAccessControlRouter;
+    uint256 constant public cap = 1000000000 ether;
 
     constructor(
         address _adminProjectRouter,
@@ -96,6 +97,11 @@ contract TSXToken is KAP20 {
     function mint(address _to, uint256 _amount) external whenNotPaused onlyMinter returns (bool) {
         _mint(_to, _amount);
         return true;
+    }
+
+    function _mint(address account, uint256 amount) internal override {
+        require(totalSupply + amount <= cap, "KAP20: cap exceeded");
+        super._mint(account, amount);
     }
 
     function burn(uint256 _amount) external whenNotPaused onlyBurner returns (bool) {

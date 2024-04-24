@@ -88,7 +88,7 @@ contract AstronizeVesting is AccessControl {
      */
     function claim(address user,uint256 month, uint256 year) public {
         // check claim count
-        require(_claimCounts[month][year]<=desiredNumWallets,"claim count");
+        require(_claimCounts[month][year]<desiredNumWallets,"claim count");
         _claimCounts[month][year]++;
 
         // check month
@@ -104,6 +104,7 @@ contract AstronizeVesting is AccessControl {
         _claims[month][year][user] = true;
 
         // transfer token
+        require(_wallets.contains(user),"wallet not on the list");
         _transferToken(user);
 
         // emit event
@@ -212,5 +213,12 @@ contract AstronizeVesting is AccessControl {
      */
     function walletLength() public view returns (uint256) {
         return _wallets.length();
+    }
+
+    /**
+     * @notice claimable month list
+     */
+    function claimableMonthList() external view returns (uint256[] memory) {
+        return claimableMonths;
     }
 }

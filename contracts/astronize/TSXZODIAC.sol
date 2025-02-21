@@ -1253,7 +1253,7 @@ contract KAP721 is KAP165, IKAP721, IKAP721V2, IKAP721Metadata, IKAP721Enumerabl
 
 pragma solidity 0.8.19;
 
-contract TSXBadouyaoNFT is KAP721 {
+contract TSXZODIAC is KAP721 {
     event MintWithMetadata(address indexed operator, string _tokenURI, uint256 _tokenId);
     event MintWithMetadataBatch(address indexed operator, string[] _tokenURIs, uint256[] _tokenIds);
 

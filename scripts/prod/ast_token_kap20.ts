@@ -6,14 +6,14 @@ async function main() {
   const symbol = "AST"
   const projectName = "astronize"
   const decimals = 18
-  const kyc = "0x2c8abd9c61d4e973ca8db5545c54c90e44a2445c"
+  const kyc = "0x409CF41ee862Df7024f289E9F2Ea2F5d0D7f3eb4"
 
-  const adminProjectRouter = "0x16bafEAf79E6B21d111ACb2A36DD6DD18c8dCbD0"
-  const transferRouter = "0x614d499a673ee3220758787572bf32872a5fe13b" //AdminKAP20Router / TransferRouter
-  const ownerAccessControlRouter = "0x85bc9f9a9651e8087f7532a7ac0df00cd39653f0" 
+  const adminProjectRouter = "0x15122c945763da4435b45E082234108361B64eBA"
+  const transferRouter = "0xFbf5b70ef07AE6F64D3796f8a0fE83A3579FAb6f" //AdminKAP20Router / TransferRouter
+  const ownerAccessControlRouter = "0xE38b683F08901434c4ee6581927acA5FbCE27427" 
 
-  const committee = "0xf4A9AaaBc92501FA818190552aE3c7E4a3F306f5"
-  const acceptedKycLevel = 0//default 
+  const committee = "0x5106ffca7cC44E6cFfEE9bD016A0934130b0322f"
+  const acceptedKycLevel = 4
 
   const AstronizeToken = await ethers.getContractFactory("ASTTokenKAP20"); 
   const astronizeToken = await AstronizeToken.deploy(
@@ -44,9 +44,9 @@ main().catch((error) => {
 
 /*
 run script
-cd /Users/jirapongpangbud/Documents/go-workspace/src/astronize-smart-contract/scripts
+cd /Users/jirapongpangbud/Documents/go-workspace/src/astronize-smart-contract/scripts/prod
 nvm use v18.16.0
-npx hardhat run ast_token_kap20.ts --network bitkub
+npx hardhat run ast_token_kap20.ts --network bitkubMainnet
 npx hardhat flatten ../contracts/astronize/ast_kap20.sol > ../flatten/ast_kap20.sol
 
 */

@@ -10,3 +10,4 @@ flatten/
 .vscode/settings.json
 .env
 scripts/play.ts
+scripts/*
